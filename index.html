@@ -855,10 +855,11 @@ function renderCatalogo() {
             ${e.foto_url
               ? `<img src="${e.foto_url}" class="species-thumb"/>`
               : `<div class="species-icon">🍈</div>`}
-            <div>
+            <div style="flex:1;">
               <div class="species-common">${e.nombre_comun}</div>
               ${e.nombre_cientifico ? `<div class="species-sci">${e.nombre_cientifico}</div>` : ''}
             </div>
+            <button class="btn btn-sm btn-danger" onclick="eliminarEspecie('${e.id}', '${m.id}')">✕</button>
           </div>
         `).join('')}
       </div>
@@ -871,6 +872,17 @@ async function eliminarMiembro(id) {
   if (!confirm('¿Seguro que deseas eliminar este miembro y todas sus especies?')) return;
   await db.from('miembros').delete().eq('id', id);
   allMiembros = allMiembros.filter(m => m.id !== id);
+  renderCatalogo();
+}
+
+async function eliminarEspecie(especieId, miembroId) {
+  if (!confirm('¿Seguro que deseas eliminar esta especie?')) return;
+  const { error } = await db.from('especies').delete().eq('id', especieId);
+  if (error) { alert('Error al eliminar: ' + error.message); return; }
+  allMiembros = allMiembros.map(m => {
+    if (m.id === miembroId) m.especies = (m.especies || []).filter(e => e.id !== especieId);
+    return m;
+  });
   renderCatalogo();
 }
 
