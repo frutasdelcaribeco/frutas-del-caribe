@@ -346,7 +346,9 @@
 <script>
 const SUPABASE_URL = 'https://nyyhmhgbomtntvklnyuy.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55eWhtaGdib210bnR2a2xueXV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NDU0MjIsImV4cCI6MjA5MjAyMTQyMn0.inDPLyqARUQ7AI8McRx4y8kHIJTBWrSLgW31eVWiBf0';
-const ADMIN_EMAIL = 'REEMPLAZA_CON_TU_CORREO';
+const ADMIN_EMAIL = 'frutasdelcaribeco@gmail.com';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── AUTH ──────────────────────────────────────────
 function switchAuthTab(tab) {
@@ -465,8 +467,6 @@ db.auth.onAuthStateChange((event, session) => {
     document.getElementById('btn-admin-tab').style.display = 'none';
   }
 });
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let tempSpecies = [];
 let tempPhotos = {};
