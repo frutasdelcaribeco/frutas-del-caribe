@@ -381,8 +381,13 @@ function renderSpeciesEntries() {
         </div>
         <div class="form-group">
           <label>Nombre científico</label>
-          <input type="text" id="cient-${i}" value="${f.cientifico}" placeholder="Ej: Mangifera indica" style="font-style:italic"
-            oninput="tempSpecies[${i}].cientifico=this.value"/>
+          <div class="autocomplete-wrap">
+            <input type="text" id="cient-${i}" value="${f.cientifico}" placeholder="Ej: Mangifera indica" style="font-style:italic" autocomplete="off"
+              oninput="tempSpecies[${i}].cientifico=this.value; onCientInput(${i}, this.value)"
+              onkeydown="onCientKey(event, ${i})"
+              onblur="setTimeout(()=>closeCientDropdown(${i}), 150)"/>
+            <div class="autocomplete-list" id="cdrop-${i}" style="display:none;"></div>
+          </div>
         </div>
       </div>
       <div class="form-group">
@@ -681,6 +686,67 @@ const CATALOGO_FRUTAS = [
   { comun: 'Zapote negro', cientifico: 'Diospyros digyna' },
   { comun: 'Zapote blanco', cientifico: 'Casimiroa edulis' },
   { comun: 'Zapote mamey', cientifico: 'Pouteria sapota' },
+  { comun: 'Achojcha', cientifico: 'Cyclanthera pedata' },
+  { comun: 'Balsamina', cientifico: 'Momordica balsamina' },
+  { comun: 'Calabaza caimán', cientifico: 'Sicana odorifera' },
+  { comun: 'Calabaza criolla', cientifico: 'Cucurbita moschata' },
+  { comun: 'Calabaza de Castilla', cientifico: 'Cucurbita maxima' },
+  { comun: 'Calabaza de peregrino', cientifico: 'Lagenaria siceraria' },
+  { comun: 'Calabaza espagueti', cientifico: 'Cucurbita pepo var. vegetable spaghetti' },
+  { comun: 'Calabaza gigante', cientifico: 'Cucurbita maxima cv. Atlantic Giant' },
+  { comun: 'Caigua', cientifico: 'Cyclanthera pedata' },
+  { comun: 'Chayote', cientifico: 'Sechium edule' },
+  { comun: 'Cidrayota', cientifico: 'Sechium edule' },
+  { comun: 'Cohombro del Caribe', cientifico: 'Cucumis anguria' },
+  { comun: 'Gac tropical', cientifico: 'Momordica cochinchinensis' },
+  { comun: 'Guatila', cientifico: 'Sechium edule' },
+  { comun: 'Kiwano', cientifico: 'Cucumis metuliferus' },
+  { comun: 'Luffa', cientifico: 'Luffa cylindrica' },
+  { comun: 'Melón cantalupo', cientifico: 'Cucumis melo var. cantalupensis' },
+  { comun: 'Melón honeydew', cientifico: 'Cucumis melo var. inodorus' },
+  { comun: 'Melón piel de sapo', cientifico: 'Cucumis melo var. inodorus cv. Piel de Sapo' },
+  { comun: 'Melón pepino', cientifico: 'Cucumis melo var. flexuosus' },
+  { comun: 'Melón de agua', cientifico: 'Citrullus lanatus' },
+  { comun: 'Momórdica', cientifico: 'Momordica charantia' },
+  { comun: 'Papayote', cientifico: 'Vasconcellea × heilbornii' },
+  { comun: 'Pepino cohombro', cientifico: 'Cucumis sativus' },
+  { comun: 'Pepinillo tropical', cientifico: 'Cucumis anguria' },
+  { comun: 'Sandía amarilla', cientifico: 'Citrullus lanatus cv. Yellow' },
+  { comun: 'Sandía sin semillas', cientifico: 'Citrullus lanatus cv. Seedless' },
+  { comun: 'Zapallito', cientifico: 'Cucurbita maxima subsp. andreana' },
+  { comun: 'Zucchini tropical', cientifico: 'Cucurbita pepo var. cylindrica' },
+  { comun: 'Ahipa', cientifico: 'Pachyrhizus ahipa' },
+  { comun: 'Algarrobo tropical', cientifico: 'Hymenaea courbaril' },
+  { comun: 'Carob', cientifico: 'Ceratonia siliqua' },
+  { comun: 'Chachafruto andino', cientifico: 'Erythrina edulis' },
+  { comun: 'Coloradito', cientifico: 'Erythrina poeppigiana' },
+  { comun: 'Cumaru', cientifico: 'Dipteryx odorata' },
+  { comun: 'Feijão guandu', cientifico: 'Cajanus cajan' },
+  { comun: 'Frijol alado', cientifico: 'Psophocarpus tetragonolobus' },
+  { comun: 'Frijol bejuco', cientifico: 'Vigna unguiculata' },
+  { comun: 'Frijol caballero', cientifico: 'Phaseolus lunatus' },
+  { comun: 'Frijol caupí', cientifico: 'Vigna unguiculata' },
+  { comun: 'Frijol de vara', cientifico: 'Vigna sinensis' },
+  { comun: 'Frijol jackbean', cientifico: 'Canavalia ensiformis' },
+  { comun: 'Frijol lila', cientifico: 'Phaseolus lunatus cv. Lila' },
+  { comun: 'Frijol terciopelo', cientifico: 'Mucuna pruriens' },
+  { comun: 'Frijol yardlong', cientifico: 'Vigna unguiculata subsp. sesquipedalis' },
+  { comun: 'Guama negra', cientifico: 'Inga punctata' },
+  { comun: 'Guama de bejuco', cientifico: 'Inga thibaudiana' },
+  { comun: 'Guama peluda', cientifico: 'Inga rubiginosa' },
+  { comun: 'Guandul', cientifico: 'Cajanus cajan' },
+  { comun: 'Huamúchil', cientifico: 'Pithecellobium dulce' },
+  { comun: 'Icaco', cientifico: 'Chrysobalanus icaco' },
+  { comun: 'Jícama', cientifico: 'Pachyrhizus erosus' },
+  { comun: 'Leucaena', cientifico: 'Leucaena leucocephala' },
+  { comun: 'Maní forrajero', cientifico: 'Arachis pintoi' },
+  { comun: 'Pacay', cientifico: 'Inga feuilleei' },
+  { comun: 'Paloverde', cientifico: 'Parkinsonia aculeata' },
+  { comun: 'Pois sucré', cientifico: 'Cajanus cajan cv. Pois Sucré' },
+  { comun: 'Tamarindo de la India', cientifico: 'Tamarindus indica' },
+  { comun: 'Tephrosia', cientifico: 'Tephrosia candida' },
+  { comun: 'Timbo', cientifico: 'Enterolobium contortisiliquum' },
+  { comun: 'Yuca brava', cientifico: 'Manihot esculenta var. amarga' },
 ];
 
 let dropSelected = {};
@@ -733,6 +799,73 @@ function selectFruta(idx, comun, cientifico) {
 
 function closeDropdown(idx) {
   const drop = document.getElementById('drop-' + idx);
+  if (drop) drop.style.display = 'none';
+}
+
+// ── AUTOCOMPLETE NOMBRE CIENTÍFICO ───────────────
+function onCientInput(idx, val) {
+  const drop = document.getElementById('cdrop-' + idx);
+  if (!val.trim()) { drop.style.display = 'none'; return; }
+  const matches = CATALOGO_FRUTAS.filter(f => f.cientifico.toLowerCase().includes(val.toLowerCase())).slice(0, 8);
+  if (!matches.length) { drop.style.display = 'none'; return; }
+  drop.innerHTML = matches.map(f => `
+    <div class="autocomplete-item" onmousedown="selectCient(${idx}, '${f.comun.replace(/'/g,"\\'")}', '${f.cientifico.replace(/'/g,"\\'")}')">
+      <span style="font-style:italic">${f.cientifico}</span>
+      <span class="sci" style="font-style:normal">${f.comun}</span>
+    </div>
+  `).join('');
+  drop.style.display = 'block';
+}
+
+function onCientKey(e, idx) {
+  if (e.key === 'Escape') closeCientDropdown(idx);
+}
+
+function selectCient(idx, comun, cientifico) {
+  tempSpecies[idx].comun = comun;
+  tempSpecies[idx].cientifico = cientifico;
+  const ci = document.getElementById('comun-' + idx);
+  const sc = document.getElementById('cient-' + idx);
+  if (ci) ci.value = comun;
+  if (sc) sc.value = cientifico;
+  closeCientDropdown(idx);
+}
+
+function closeCientDropdown(idx) {
+  const drop = document.getElementById('cdrop-' + idx);
+  if (drop) drop.style.display = 'none';
+}
+
+function onECientInput(idx, val) {
+  const drop = document.getElementById('ecdrop-' + idx);
+  if (!val.trim()) { drop.style.display = 'none'; return; }
+  const matches = CATALOGO_FRUTAS.filter(f => f.cientifico.toLowerCase().includes(val.toLowerCase())).slice(0, 8);
+  if (!matches.length) { drop.style.display = 'none'; return; }
+  drop.innerHTML = matches.map(f => `
+    <div class="autocomplete-item" onmousedown="selectECient(${idx}, '${f.comun.replace(/'/g,"\\'")}', '${f.cientifico.replace(/'/g,"\\'")}')">
+      <span style="font-style:italic">${f.cientifico}</span>
+      <span class="sci" style="font-style:normal">${f.comun}</span>
+    </div>
+  `).join('');
+  drop.style.display = 'block';
+}
+
+function onECientKey(e, idx) {
+  if (e.key === 'Escape') closeECientDropdown(idx);
+}
+
+function selectECient(idx, comun, cientifico) {
+  tempSpeciesExistente[idx].comun = comun;
+  tempSpeciesExistente[idx].cientifico = cientifico;
+  const ci = document.getElementById('ecomun-' + idx);
+  const sc = document.getElementById('ecient-' + idx);
+  if (ci) ci.value = comun;
+  if (sc) sc.value = cientifico;
+  closeECientDropdown(idx);
+}
+
+function closeECientDropdown(idx) {
+  const drop = document.getElementById('ecdrop-' + idx);
   if (drop) drop.style.display = 'none';
 }
 
@@ -1034,8 +1167,13 @@ function renderSpeciesEntriesExistente() {
         </div>
         <div class="form-group">
           <label>Nombre científico</label>
-          <input type="text" id="ecient-${i}" value="${f.cientifico}" placeholder="Ej: Mangifera indica" style="font-style:italic"
-            oninput="tempSpeciesExistente[${i}].cientifico=this.value"/>
+          <div class="autocomplete-wrap">
+            <input type="text" id="ecient-${i}" value="${f.cientifico}" placeholder="Ej: Mangifera indica" style="font-style:italic" autocomplete="off"
+              oninput="tempSpeciesExistente[${i}].cientifico=this.value; onECientInput(${i}, this.value)"
+              onkeydown="onECientKey(event, ${i})"
+              onblur="setTimeout(()=>closeECientDropdown(${i}), 150)"/>
+            <div class="autocomplete-list" id="ecdrop-${i}" style="display:none;"></div>
+          </div>
         </div>
       </div>
       <div class="form-group">
