@@ -141,6 +141,18 @@
   .autocomplete-item .sci { font-size: 0.75rem; color: var(--text-muted); font-style: italic; white-space: nowrap; }
   .autocomplete-hint { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
 
+  /* LOGIN */
+  #login-screen { position:fixed; inset:0; background:#0d2b18; display:flex; align-items:center; justify-content:center; z-index:9999; }
+  #login-screen.hidden { display:none; }
+  .login-box { background:#fff; border-radius:16px; padding:2.5rem 2rem; width:100%; max-width:380px; text-align:center; }
+  .login-logo { font-size:3rem; margin-bottom:0.5rem; }
+  .login-title { font-family:'Fraunces',serif; font-size:1.6rem; color:#0d2b18; font-weight:600; margin-bottom:4px; }
+  .login-sub { font-size:0.82rem; color:#5a6a5c; margin-bottom:1.5rem; }
+  .login-box input { margin-bottom:1rem; text-align:center; letter-spacing:0.1em; }
+  .login-error { font-size:0.82rem; color:#8b2020; background:#fdf4f3; border:1px solid #e8b4b0; border-radius:8px; padding:8px 12px; margin-bottom:1rem; display:none; }
+  .login-btn { width:100%; padding:10px; background:#1a6b42; color:white; border:none; border-radius:8px; font-size:0.95rem; font-weight:500; cursor:pointer; font-family:'DM Sans',sans-serif; }
+  .login-btn:hover { background:#0d3b2e; }
+
   @media (max-width: 600px) {
     .form-grid, .species-grid { grid-template-columns: 1fr; }
     header { padding: 1rem; }
@@ -151,6 +163,17 @@
 </style>
 </head>
 <body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🥭</div>
+    <div class="login-title">Frutas del Caribe</div>
+    <div class="login-sub">Inventario de especies del Caribe colombiano</div>
+    <input type="password" id="login-pass" placeholder="Contraseña de acceso" onkeydown="if(event.key==='Enter') verificarClave()"/>
+    <div class="login-error" id="login-error">Contraseña incorrecta. Inténtalo de nuevo.</div>
+    <button class="login-btn" onclick="verificarClave()">Entrar</button>
+  </div>
+</div>
 
 <header>
   <div class="logo">🥭</div>
@@ -279,6 +302,25 @@
 <script>
 const SUPABASE_URL = 'https://nyyhmhgbomtntvklnyuy.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55eWhtaGdib210bnR2a2xueXV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NDU0MjIsImV4cCI6MjA5MjAyMTQyMn0.inDPLyqARUQ7AI8McRx4y8kHIJTBWrSLgW31eVWiBf0';
+
+// ── LOGIN ─────────────────────────────────────────
+const CLAVE = 'frutasdelcaribe2026';
+
+function verificarClave() {
+  const val = document.getElementById('login-pass').value;
+  if (val === CLAVE) {
+    sessionStorage.setItem('fdc_auth', '1');
+    document.getElementById('login-screen').classList.add('hidden');
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+  }
+}
+
+if (sessionStorage.getItem('fdc_auth') === '1') {
+  document.getElementById('login-screen').classList.add('hidden');
+}
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -453,6 +495,192 @@ const CATALOGO_FRUTAS = [
   { comun: 'Zapote', cientifico: 'Pouteria sapota' },
   { comun: 'Zapote de monte', cientifico: 'Matisia cordata' },
   { comun: 'Zarzamora', cientifico: 'Rubus ulmifolius' },
+  { comun: 'Abiu', cientifico: 'Pouteria caimito' },
+  { comun: 'Ambarella', cientifico: 'Spondias dulcis' },
+  { comun: 'Canistel', cientifico: 'Pouteria campechiana' },
+  { comun: 'Cherimoya', cientifico: 'Annona cherimola' },
+  { comun: 'Chico zapote', cientifico: 'Manilkara zapota' },
+  { comun: 'Duku', cientifico: 'Lansium parasiticum' },
+  { comun: 'Durian', cientifico: 'Durio zibethinus' },
+  { comun: 'Fruta del dragón', cientifico: 'Hylocereus costaricensis' },
+  { comun: 'Fruta de pan', cientifico: 'Artocarpus altilis' },
+  { comun: 'Jabuticaba', cientifico: 'Plinia cauliflora' },
+  { comun: 'Jambo rojo', cientifico: 'Syzygium malaccense' },
+  { comun: 'Jambo blanco', cientifico: 'Syzygium aqueum' },
+  { comun: 'Jujube', cientifico: 'Ziziphus jujuba' },
+  { comun: 'Kaffir lime', cientifico: 'Citrus hystrix' },
+  { comun: 'Kumquat', cientifico: 'Fortunella margarita' },
+  { comun: 'Langsat', cientifico: 'Lansium domesticum' },
+  { comun: 'Longan', cientifico: 'Dimocarpus longan' },
+  { comun: 'Loquat', cientifico: 'Eriobotrya japonica' },
+  { comun: 'Lychee', cientifico: 'Litchi chinensis' },
+  { comun: 'Manzana de agua', cientifico: 'Syzygium jambos' },
+  { comun: 'Manzana rosa', cientifico: 'Syzygium samarangense' },
+  { comun: 'Marang', cientifico: 'Artocarpus odoratissimus' },
+  { comun: 'Pepino dulce', cientifico: 'Solanum muricatum' },
+  { comun: 'Rambután', cientifico: 'Nephelium lappaceum' },
+  { comun: 'Salak', cientifico: 'Salacca zalacca' },
+  { comun: 'Santol', cientifico: 'Sandoricum koetjape' },
+  { comun: 'Tangelo', cientifico: 'Citrus × tangelo' },
+  { comun: 'Wampee', cientifico: 'Clausena lansium' },
+  { comun: 'Yangmei', cientifico: 'Morella rubra' },
+  { comun: 'Garcinia', cientifico: 'Garcinia xanthochymus' },
+  { comun: 'Naranja de Sevilla', cientifico: 'Citrus aurantium' },
+  { comun: 'Zumbosón', cientifico: 'Ximenia americana' },
+  { comun: 'Acerola', cientifico: 'Malpighia emarginata' },
+  { comun: 'Achachairú', cientifico: 'Garcinia humilis' },
+  { comun: 'Ackee', cientifico: 'Blighia sapida' },
+  { comun: 'Almendro tropical', cientifico: 'Terminalia catappa' },
+  { comun: 'Alupag', cientifico: 'Euphoria didyma' },
+  { comun: 'Anona', cientifico: 'Annona reticulata' },
+  { comun: 'Araza-boi', cientifico: 'Eugenia stipitata subsp. sororia' },
+  { comun: 'Bactris setosa', cientifico: 'Bactris setosa' },
+  { comun: 'Bael', cientifico: 'Aegle marmelos' },
+  { comun: 'Bakuri', cientifico: 'Platonia insignis' },
+  { comun: 'Banana roja', cientifico: 'Musa acuminata cv. Red Dacca' },
+  { comun: 'Banana plateada', cientifico: 'Musa × paradisiaca cv. Bluggoe' },
+  { comun: 'Bilimbi', cientifico: 'Averrhoa bilimbi' },
+  { comun: 'Biriba', cientifico: 'Rollinia mucosa' },
+  { comun: 'Breadnut', cientifico: 'Artocarpus camansi' },
+  { comun: 'Cacao', cientifico: 'Theobroma cacao' },
+  { comun: 'Cacao blanco', cientifico: 'Theobroma cacao cv. Criollo' },
+  { comun: 'Calabaza', cientifico: 'Cucurbita moschata' },
+  { comun: 'Camucamu negro', cientifico: 'Myrciaria floribunda' },
+  { comun: 'Capulín', cientifico: 'Prunus serotina subsp. capuli' },
+  { comun: 'Castaña amazónica', cientifico: 'Bertholletia excelsa' },
+  { comun: 'Cayena', cientifico: 'Hibiscus sabdariffa' },
+  { comun: 'Cerezo de Surinam', cientifico: 'Eugenia uniflora' },
+  { comun: 'Cerezo de Barbados', cientifico: 'Malpighia emarginata' },
+  { comun: 'Cidra', cientifico: 'Citrus medica' },
+  { comun: 'Ciruelo de hueso', cientifico: 'Bunchosia armeniaca' },
+  { comun: 'Cítrico Buddha', cientifico: 'Citrus medica var. sarcodactylis' },
+  { comun: 'Clementina', cientifico: 'Citrus clementina' },
+  { comun: 'Cocoplum', cientifico: 'Chrysobalanus icaco' },
+  { comun: 'Coquito andino', cientifico: 'Jubaea chilensis' },
+  { comun: 'Cubiu', cientifico: 'Solanum sessiliflorum' },
+  { comun: 'Cupuaçu', cientifico: 'Theobroma grandiflorum' },
+  { comun: 'Datil', cientifico: 'Phoenix dactylifera' },
+  { comun: 'Dovyalis', cientifico: 'Dovyalis caffra' },
+  { comun: 'Emblic', cientifico: 'Phyllanthus emblica' },
+  { comun: 'Falsa guanábana', cientifico: 'Annona montana' },
+  { comun: 'Feijoa silvestre', cientifico: 'Acca sellowiana var. silvestris' },
+  { comun: 'Finger lime', cientifico: 'Microcitrus australasica' },
+  { comun: 'Fruta de pan de Samoa', cientifico: 'Artocarpus mariannensis' },
+  { comun: 'Fruta de palma africana', cientifico: 'Elaeis guineensis' },
+  { comun: 'Gac', cientifico: 'Momordica cochinchinensis' },
+  { comun: 'Genip', cientifico: 'Melicoccus bijugatus' },
+  { comun: 'Goraka', cientifico: 'Garcinia cambogia' },
+  { comun: 'Granada', cientifico: 'Punica granatum' },
+  { comun: 'Grape fruit', cientifico: 'Citrus paradisi' },
+  { comun: 'Guayaba de Brasil', cientifico: 'Psidium guineense' },
+  { comun: 'Guayaba de monte', cientifico: 'Psidium brownianum' },
+  { comun: 'Guayabo del Perú', cientifico: 'Psidium guajava var. pyrifera' },
+  { comun: 'Guyabano', cientifico: 'Annona muricata cv. Guyabano' },
+  { comun: 'Hog plum', cientifico: 'Spondias mombin' },
+  { comun: 'Huito', cientifico: 'Genipa americana' },
+  { comun: 'Ilama', cientifico: 'Annona diversifolia' },
+  { comun: 'Imbe', cientifico: 'Garcinia livingstonei' },
+  { comun: 'Indian gooseberry', cientifico: 'Phyllanthus emblica' },
+  { comun: 'Jabara', cientifico: 'Citrus jabara' },
+  { comun: 'Jambolan', cientifico: 'Syzygium cumini' },
+  { comun: 'Java plum', cientifico: 'Syzygium cumini' },
+  { comun: 'Jobo', cientifico: 'Spondias mombin' },
+  { comun: 'Juçara', cientifico: 'Euterpe edulis' },
+  { comun: 'Kalamansi', cientifico: 'Citrus × microcarpa' },
+  { comun: 'Kei apple', cientifico: 'Dovyalis caffra' },
+  { comun: 'Kepel', cientifico: 'Stelechocarpus burahol' },
+  { comun: 'Khao yai', cientifico: 'Artocarpus integer' },
+  { comun: 'Korlan', cientifico: 'Nephelium hypoleucum' },
+  { comun: 'Kwai muk', cientifico: 'Artocarpus hypargyreus' },
+  { comun: 'Lemondrop mangosteen', cientifico: 'Garcinia madruno' },
+  { comun: 'Limeberry', cientifico: 'Triphasia trifolia' },
+  { comun: 'Limón caviar', cientifico: 'Microcitrus australasica' },
+  { comun: 'Limón Meyer', cientifico: 'Citrus × meyeri' },
+  { comun: 'Limón persa', cientifico: 'Citrus latifolia' },
+  { comun: 'Lúcuma', cientifico: 'Pouteria lucuma' },
+  { comun: 'Mamey colorado', cientifico: 'Pouteria sapota' },
+  { comun: 'Mango Ataulfo', cientifico: 'Mangifera indica cv. Ataulfo' },
+  { comun: 'Mango criollo', cientifico: 'Mangifera indica cv. Criollo' },
+  { comun: 'Mango hilacha', cientifico: 'Mangifera indica cv. Hilacha' },
+  { comun: 'Mango Manila', cientifico: 'Mangifera indica cv. Manila' },
+  { comun: 'Mango Keitt', cientifico: 'Mangifera indica cv. Keitt' },
+  { comun: 'Manzana', cientifico: 'Malus domestica' },
+  { comun: 'Maracuyá gigante', cientifico: 'Passiflora quadrangularis' },
+  { comun: 'Maracuyá morado', cientifico: 'Passiflora edulis f. edulis' },
+  { comun: 'Maracuyá silvestre', cientifico: 'Passiflora foetida' },
+  { comun: 'Maracuyá de monte', cientifico: 'Passiflora nitida' },
+  { comun: 'Marula', cientifico: 'Sclerocarya birrea' },
+  { comun: 'Matisia', cientifico: 'Matisia cordata' },
+  { comun: 'Melocotón', cientifico: 'Prunus persica' },
+  { comun: 'Membrillo', cientifico: 'Cydonia oblonga' },
+  { comun: 'Mimosa amarilla', cientifico: 'Inga laurina' },
+  { comun: 'Mombin', cientifico: 'Spondias mombin' },
+  { comun: 'Mora azul', cientifico: 'Vaccinium corymbosum' },
+  { comun: 'Mora de cereza', cientifico: 'Rubus spectabilis' },
+  { comun: 'Mora de los Andes', cientifico: 'Rubus adenotrichos' },
+  { comun: 'Morinda', cientifico: 'Morinda citrifolia' },
+  { comun: 'Mundu', cientifico: 'Garcinia dulcis' },
+  { comun: 'Muruci', cientifico: 'Byrsonima crassifolia' },
+  { comun: 'Nance', cientifico: 'Byrsonima crassifolia' },
+  { comun: 'Neem', cientifico: 'Azadirachta indica' },
+  { comun: 'Níspero', cientifico: 'Manilkara zapota' },
+  { comun: 'Níspero japonés', cientifico: 'Eriobotrya japonica' },
+  { comun: 'Noni de montaña', cientifico: 'Morinda trimera' },
+  { comun: 'Nopales', cientifico: 'Opuntia ficus-indica' },
+  { comun: 'Olivo', cientifico: 'Olea europaea' },
+  { comun: 'Palma africana', cientifico: 'Elaeis guineensis' },
+  { comun: 'Palma camedor', cientifico: 'Chamaedorea elegans' },
+  { comun: 'Palmito', cientifico: 'Euterpe oleracea' },
+  { comun: 'Papaya hawaiana', cientifico: 'Carica papaya cv. Solo' },
+  { comun: 'Papaya maradol', cientifico: 'Carica papaya cv. Maradol' },
+  { comun: 'Passion fruit amarillo', cientifico: 'Passiflora laurifolia' },
+  { comun: 'Pataba', cientifico: 'Oenocarpus bataua' },
+  { comun: 'Peach palm', cientifico: 'Bactris gasipaes' },
+  { comun: 'Pepino de agua', cientifico: 'Sechium edule' },
+  { comun: 'Pera asiática', cientifico: 'Pyrus pyrifolia' },
+  { comun: 'Pijuayo', cientifico: 'Bactris gasipaes' },
+  { comun: 'Pimienta de Jamaica', cientifico: 'Pimenta dioica' },
+  { comun: 'Piña blanca', cientifico: 'Ananas comosus cv. Blanca' },
+  { comun: 'Piñuela', cientifico: 'Bromelia pinguin' },
+  { comun: 'Pitanga', cientifico: 'Eugenia uniflora' },
+  { comun: 'Pitaya amarilla de Colombia', cientifico: 'Selenicereus megalanthus' },
+  { comun: 'Pixbae', cientifico: 'Bactris gasipaes cv. Pixbae' },
+  { comun: 'Plinia', cientifico: 'Plinia trunciflora' },
+  { comun: 'Plinia cauliflora', cientifico: 'Plinia cauliflora' },
+  { comun: 'Pomarrosa', cientifico: 'Syzygium jambos' },
+  { comun: 'Pomerac', cientifico: 'Syzygium malaccense' },
+  { comun: 'Pulasán', cientifico: 'Nephelium mutabile' },
+  { comun: 'Quenepa', cientifico: 'Melicoccus bijugatus' },
+  { comun: 'Rambai', cientifico: 'Baccaurea motleyana' },
+  { comun: 'Rambután amarillo', cientifico: 'Nephelium lappaceum cv. Amarillo' },
+  { comun: 'Rosa mosqueta', cientifico: 'Rosa canina' },
+  { comun: 'Rumberry', cientifico: 'Myrciaria floribunda' },
+  { comun: 'Saramuyo', cientifico: 'Annona squamosa' },
+  { comun: 'Sapodilla', cientifico: 'Manilkara zapota' },
+  { comun: 'Satsuma', cientifico: 'Citrus unshiu' },
+  { comun: 'Siriguela', cientifico: 'Spondias purpurea' },
+  { comun: 'Sugar apple', cientifico: 'Annona squamosa' },
+  { comun: 'Surinam cherry', cientifico: 'Eugenia uniflora' },
+  { comun: 'Tamarindo dulce', cientifico: 'Tamarindus indica cv. Dulce' },
+  { comun: 'Tamarindo agridulce', cientifico: 'Tamarindus indica' },
+  { comun: 'Tangelo minneola', cientifico: 'Citrus × tangelo cv. Minneola' },
+  { comun: 'Tangerina', cientifico: 'Citrus tangerina' },
+  { comun: 'Taperebá', cientifico: 'Spondias mombin' },
+  { comun: 'Taxo', cientifico: 'Passiflora tripartita' },
+  { comun: 'Tomillo silvestre', cientifico: 'Thymus vulgaris' },
+  { comun: 'Toronja', cientifico: 'Citrus paradisi' },
+  { comun: 'Tucumã', cientifico: 'Astrocaryum aculeatum' },
+  { comun: 'Umarí', cientifico: 'Poraqueiba sericea' },
+  { comun: 'Uvilla', cientifico: 'Physalis peruviana' },
+  { comun: 'Uvos', cientifico: 'Spondias mombin' },
+  { comun: 'Velvet tamarind', cientifico: 'Dialium guineense' },
+  { comun: 'Vainilla', cientifico: 'Vanilla planifolia' },
+  { comun: 'White sapote', cientifico: 'Casimiroa edulis' },
+  { comun: 'Yellow mombin', cientifico: 'Spondias mombin' },
+  { comun: 'Yuzu', cientifico: 'Citrus junos' },
+  { comun: 'Zapote negro', cientifico: 'Diospyros digyna' },
+  { comun: 'Zapote blanco', cientifico: 'Casimiroa edulis' },
+  { comun: 'Zapote mamey', cientifico: 'Pouteria sapota' },
 ];
 
 let dropSelected = {};
