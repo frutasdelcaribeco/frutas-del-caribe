@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Frutas del Caribe</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --green-dark: #1a3d1f;
+    --green-mid: #2e6b35;
+    --green-light: #4a9455;
+    --green-pale: #d4ead6;
+    --green-faint: #f0f7f0;
+    --amber: #c97b2a;
+    --amber-light: #fdf3e3;
+    --text: #1a1a1a;
+    --text-muted: #5a6a5c;
+    --border: #c8ddc9;
+    --white: #ffffff;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--green-faint); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  header { background: var(--green-dark); color: white; padding: 1.5rem 2rem; display: flex; align-items: center; gap: 1rem; }
+  header h1 { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; }
+  header p { font-size: 0.8rem; opacity: 0.65; margin-top: 2px; }
+  .logo { font-size: 2rem; }
+
+  /* NAV TABS */
+  nav { background: var(--white); border-bottom: 1px solid var(--border); display: flex; padding: 0 2rem; }
+  nav button { font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 500; padding: 1rem 1.25rem; border: none; background: none; color: var(--text-muted); cursor: pointer; border-bottom: 2.5px solid transparent; transition: all 0.2s; }
+  nav button.active { color: var(--green-mid); border-bottom-color: var(--green-mid); }
+  nav button:hover:not(.active) { color: var(--text); }
+
+  /* MAIN */
+  main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* CARDS */
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.25rem; }
+  .card-title { font-family: 'Fraunces', serif; font-size: 1.1rem; color: var(--green-dark); margin-bottom: 1rem; }
+
+  /* FORMS */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+  input, textarea, select { font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--white); color: var(--text); transition: border-color 0.2s; }
+  input:focus, textarea:focus { outline: none; border-color: var(--green-mid); }
+  textarea { resize: vertical; min-height: 70px; }
+
+  /* SPECIES ENTRIES */
+  .species-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem; }
+  .species-entry { background: var(--green-faint); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; }
+  .species-entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+  .species-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .photo-upload { border: 1.5px dashed var(--border); border-radius: var(--radius-sm); padding: 10px; text-align: center; cursor: pointer; font-size: 0.78rem; color: var(--text-muted); position: relative; transition: border-color 0.2s; }
+  .photo-upload:hover { border-color: var(--green-light); }
+  .photo-upload input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .photo-preview { width: 100%; height: 80px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); display: block; }
+
+  /* BUTTONS */
+  .btn { font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 500; padding: 8px 18px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+  .btn-primary { background: var(--green-mid); color: white; border-color: var(--green-mid); }
+  .btn-primary:hover { background: var(--green-dark); }
+  .btn-outline { background: transparent; color: var(--text); border-color: var(--border); }
+  .btn-outline:hover { background: var(--green-faint); }
+  .btn-ghost { background: transparent; color: var(--text-muted); border: none; font-size: 0.8rem; padding: 4px 10px; }
+  .btn-ghost:hover { color: #c0392b; }
+  .btn-add { background: var(--green-pale); color: var(--green-dark); border-color: var(--green-pale); font-size: 0.82rem; padding: 6px 14px; }
+  .btn-add:hover { background: #b8d9ba; }
+  .btn-export { background: var(--green-dark); color: white; border-color: var(--green-dark); }
+  .btn-export:hover { background: #0f2613; }
+  .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
+  .btn-danger { color: #c0392b; border-color: #e8b4b0; background: #fdf4f3; }
+  .btn-danger:hover { background: #fce8e6; }
+  .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1rem; }
+  .section-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+
+  /* ALERTS */
+  .alert { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 0.85rem; margin-top: 10px; }
+  .alert-ok { background: var(--green-pale); color: var(--green-dark); border: 1px solid #a8cca9; }
+  .alert-err { background: #fdf4f3; color: #8b2020; border: 1px solid #e8b4b0; }
+
+  /* MEMBER CARDS */
+  .member-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; transition: box-shadow 0.2s; }
+  .member-card:hover { box-shadow: 0 4px 16px rgba(46,107,53,0.08); }
+  .member-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--green-pale); display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-size: 1rem; color: var(--green-dark); flex-shrink: 0; font-weight: 600; }
+  .member-name { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 600; color: var(--green-dark); }
+  .member-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .project-badge { background: var(--amber-light); color: var(--amber); border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 500; }
+  .maps-link { color: var(--green-mid); font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
+  .maps-link:hover { text-decoration: underline; }
+  .species-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--green-faint); }
+  .species-item:last-child { border-bottom: none; }
+  .species-thumb { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
+  .species-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--green-pale); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+  .species-common { font-size: 0.9rem; font-weight: 500; color: var(--text); }
+  .species-sci { font-size: 0.78rem; color: var(--text-muted); font-style: italic; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem; text-align: center; }
+  .stat-num { font-family: 'Fraunces', serif; font-size: 2.2rem; color: var(--green-mid); font-weight: 600; line-height: 1; }
+  .stat-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+  .rank-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--green-faint); font-size: 0.875rem; }
+  .rank-row:last-child { border-bottom: none; }
+  .rank-bar-bg { width: 100px; height: 6px; background: var(--green-faint); border-radius: 3px; }
+  .rank-bar-fill { height: 6px; background: var(--green-light); border-radius: 3px; }
+  .badge { background: var(--green-pale); color: var(--green-dark); border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 500; }
+
+  /* SEARCH */
+  .search-bar { position: relative; }
+  .search-bar input { padding-left: 36px; width: 100%; }
+  .search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem; pointer-events: none; }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 3rem; color: var(--text-muted); font-size: 0.9rem; }
+  .spinner { display: inline-block; width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--green-mid); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty { text-align: center; padding: 3rem; color: var(--text-muted); font-size: 0.9rem; }
+
+  /* TOOLBAR */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 1.25rem; align-items: center; }
+  .toolbar .search-bar { flex: 1; }
+
+  /* AUTOCOMPLETE */
+  .autocomplete-wrap { position: relative; }
+  .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-sm); z-index: 100; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 16px rgba(0,0,0,0.08); margin-top: 2px; }
+  .autocomplete-item { padding: 8px 12px; cursor: pointer; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-bottom: 1px solid var(--green-faint); }
+  .autocomplete-item:last-child { border-bottom: none; }
+  .autocomplete-item:hover, .autocomplete-item.selected { background: var(--green-faint); }
+  .autocomplete-item .sci { font-size: 0.75rem; color: var(--text-muted); font-style: italic; white-space: nowrap; }
+  .autocomplete-hint { font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; }
+
+  @media (max-width: 600px) {
+    .form-grid, .species-grid { grid-template-columns: 1fr; }
+    header { padding: 1rem; }
+    main { padding: 1rem; }
+    nav { padding: 0 1rem; overflow-x: auto; }
+    .toolbar { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🥭</div>
+  <div>
+    <h1>Frutas del Caribe</h1>
+    <p>Registro de especies por miembro</p>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('registrar', this)">Registrar miembro</button>
+  <button onclick="showTab('catalogo', this)">Catálogo</button>
+  <button onclick="showTab('estadisticas', this)">Estadísticas</button>
+</nav>
+
+<main>
+
+  <!-- REGISTRAR -->
+  <div id="tab-registrar" class="section active">
+    <div class="card">
+      <div class="card-title">Datos del miembro</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Nombre completo *</label><input type="text" id="inp-nombre" placeholder="Ej: María López"/></div>
+        <div class="form-group"><label>Nombre del proyecto</label><input type="text" id="inp-proyecto" placeholder="Ej: Finca La Esperanza"/></div>
+        <div class="form-group">
+          <label>Departamento</label>
+          <select id="inp-depto" onchange="onDeptoChange()">
+            <option value="">— Selecciona un departamento —</option>
+            <option value="otro">Otro (fuera de Colombia)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Municipio</label>
+          <select id="inp-municipio" onchange="onMunicipioChange()" disabled>
+            <option value="">— Primero selecciona departamento —</option>
+          </select>
+        </div>
+        <div class="form-group full" id="region-manual-wrap" style="display:none;">
+          <label>Ubicación <span style="font-weight:400;color:var(--text-muted)">(fuera de Colombia)</span></label>
+          <input type="text" id="inp-region-manual" placeholder="Ej: Ciudad de México, México"/>
+        </div>
+        <div class="form-group"><label>Enlace a Google Maps</label><input type="text" id="inp-maps" placeholder="https://maps.app.goo.gl/..."/></div>
+        <div class="form-group full"><label>Notas adicionales</label><textarea id="inp-notas" placeholder="Métodos de cultivo, observaciones..."></textarea></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-bar">
+        <div class="card-title" style="margin-bottom:0">Especies cultivadas</div>
+        <button class="btn btn-add" onclick="addSpeciesEntry()">+ Agregar especie</button>
+      </div>
+      <div class="species-list" id="species-list">
+        <p style="font-size:0.85rem;color:var(--text-muted);text-align:center;padding:1rem 0;">Agrega al menos una especie cultivada</p>
+      </div>
+      <div id="alert-reg" style="display:none;" class="alert"></div>
+      <div class="actions">
+        <button class="btn btn-outline" onclick="resetForm()">Limpiar</button>
+        <button class="btn btn-primary" onclick="guardarMiembro()">Guardar miembro</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATALOGO -->
+  <div id="tab-catalogo" class="section">
+    <div class="toolbar">
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search" placeholder="Buscar por nombre, proyecto, fruta o región..." oninput="renderCatalogo()"/>
+      </div>
+      <button class="btn btn-export" onclick="exportarExcel()">Exportar Excel</button>
+    </div>
+    <div id="catalogo-list"><div class="loading"><div class="spinner"></div><br>Cargando...</div></div>
+  </div>
+
+  <!-- ESTADISTICAS -->
+  <div id="tab-estadisticas" class="section">
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="card">
+      <div class="card-title">Frutas más cultivadas</div>
+      <div id="frutas-ranking"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const SUPABASE_URL = 'https://nyyhmhgbomtntvklnyuy.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55eWhtaGdib210bnR2a2xueXV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NDU0MjIsImV4cCI6MjA5MjAyMTQyMn0.inDPLyqARUQ7AI8McRx4y8kHIJTBWrSLgW31eVWiBf0';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let tempSpecies = [];
+let tempPhotos = {};
+let allMiembros = [];
+
+// ── TABS ──────────────────────────────────────────
+function showTab(tab, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  el.classList.add('active');
+  if (tab === 'catalogo') cargarYRenderCatalogo();
+  if (tab === 'estadisticas') cargarYRenderStats();
+}
+
+// ── SPECIES ENTRIES ───────────────────────────────
+function addSpeciesEntry() {
+  tempSpecies.push({ comun: '', cientifico: '', foto: null });
+  renderSpeciesEntries();
+}
+
+function removeSpeciesEntry(idx) {
+  tempSpecies.splice(idx, 1);
+  const nm = {};
+  Object.keys(tempPhotos).forEach(k => {
+    const ki = parseInt(k);
+    if (ki !== idx) nm[ki > idx ? ki - 1 : ki] = tempPhotos[k];
+  });
+  tempPhotos = nm;
+  renderSpeciesEntries();
+}
+
+function renderSpeciesEntries() {
+  const c = document.getElementById('species-list');
+  if (!tempSpecies.length) {
+    c.innerHTML = '<p style="font-size:0.85rem;color:var(--text-muted);text-align:center;padding:1rem 0;">Agrega al menos una especie cultivada</p>';
+    return;
+  }
+  c.innerHTML = tempSpecies.map((f, i) => `
+    <div class="species-entry">
+      <div class="species-entry-header">
+        <span>Especie ${i + 1}</span>
+        <button class="btn btn-ghost btn-sm" onclick="removeSpeciesEntry(${i})">✕ Eliminar</button>
+      </div>
+      <div class="species-grid">
+        <div class="form-group">
+          <label>Nombre común *</label>
+          <div class="autocomplete-wrap">
+            <input type="text" id="comun-${i}" value="${f.comun}" placeholder="Escribe el nombre o busca en la lista..." autocomplete="off"
+              oninput="tempSpecies[${i}].comun=this.value; onComunInput(${i}, this.value)"
+              onkeydown="onComunKey(event, ${i})"
+              onblur="setTimeout(()=>closeDropdown(${i}), 150)"/>
+            <div class="autocomplete-list" id="drop-${i}" style="display:none;"></div>
+          </div>
+          <span class="autocomplete-hint">Puedes escribir cualquier nombre o escoger una sugerencia</span>
+        </div>
+        <div class="form-group">
+          <label>Nombre científico</label>
+          <input type="text" id="cient-${i}" value="${f.cientifico}" placeholder="Ej: Mangifera indica" style="font-style:italic"
+            oninput="tempSpecies[${i}].cientifico=this.value"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Foto de la especie</label>
+        ${tempPhotos[i]
+          ? `<img src="${tempPhotos[i]}" class="photo-preview"/><button class="btn btn-ghost btn-sm" style="margin-top:4px;" onclick="clearPhoto(${i})">✕ Quitar foto</button>`
+          : `<div class="photo-upload"><input type="file" accept="image/*" onchange="handlePhoto(event,${i})"/>Toca para subir foto</div>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── AUTOCOMPLETE LOGIC ────────────────────────────
+const CATALOGO_FRUTAS = [
+  { comun: 'Açaí', cientifico: 'Euterpe oleracea' },
+  { comun: 'Aguacate', cientifico: 'Persea americana' },
+  { comun: 'Aguacate criollo', cientifico: 'Persea americana var. drymifolia' },
+  { comun: 'Aguacate Hass', cientifico: 'Persea americana cv. Hass' },
+  { comun: 'Arazá', cientifico: 'Eugenia stipitata' },
+  { comun: 'Anón', cientifico: 'Annona squamosa' },
+  { comun: 'Badea', cientifico: 'Passiflora quadrangularis' },
+  { comun: 'Banana bocadillo', cientifico: 'Musa acuminata cv. Bocadillo' },
+  { comun: 'Banano', cientifico: 'Musa paradisiaca' },
+  { comun: 'Borojo', cientifico: 'Borojoa patinoi' },
+  { comun: 'Brevo', cientifico: 'Ficus carica' },
+  { comun: 'Caimito', cientifico: 'Chrysophyllum cainito' },
+  { comun: 'Camú camú', cientifico: 'Myrciaria dubia' },
+  { comun: 'Canangucho', cientifico: 'Mauritia flexuosa' },
+  { comun: 'Carambolo', cientifico: 'Averrhoa carambola' },
+  { comun: 'Castaño de agua', cientifico: 'Trapa natans' },
+  { comun: 'Cedrillo', cientifico: 'Brunellia comocladifolia' },
+  { comun: 'Cereza de café', cientifico: 'Coffea arabica' },
+  { comun: 'Chachafruto', cientifico: 'Erythrina edulis' },
+  { comun: 'Chamburo', cientifico: 'Vasconcellea pubescens' },
+  { comun: 'Chontaduro', cientifico: 'Bactris gasipaes' },
+  { comun: 'Chuchío', cientifico: 'Oenocarpus bataua' },
+  { comun: 'Ciruela', cientifico: 'Prunus domestica' },
+  { comun: 'Ciruela costeña', cientifico: 'Spondias purpurea' },
+  { comun: 'Cocli', cientifico: 'Attalea butyracea' },
+  { comun: 'Cocona', cientifico: 'Solanum sessiliflorum' },
+  { comun: 'Coco', cientifico: 'Cocos nucifera' },
+  { comun: 'Copoazú', cientifico: 'Theobroma grandiflorum' },
+  { comun: 'Corozo de pava', cientifico: 'Bactris guineensis' },
+  { comun: 'Corozo rojo', cientifico: 'Bactris major' },
+  { comun: 'Curuba', cientifico: 'Passiflora mollissima' },
+  { comun: 'Curuba de castilla', cientifico: 'Passiflora tarminiana' },
+  { comun: 'Durazno', cientifico: 'Prunus persica' },
+  { comun: 'Feijoa', cientifico: 'Acca sellowiana' },
+  { comun: 'Frambuesa', cientifico: 'Rubus idaeus' },
+  { comun: 'Fresa', cientifico: 'Fragaria × ananassa' },
+  { comun: 'Granadilla', cientifico: 'Passiflora ligularis' },
+  { comun: 'Granadilla de quijos', cientifico: 'Passiflora popenovii' },
+  { comun: 'Guama', cientifico: 'Inga edulis' },
+  { comun: 'Guama churimo', cientifico: 'Inga spectabilis' },
+  { comun: 'Guanábana', cientifico: 'Annona muricata' },
+  { comun: 'Guaraná', cientifico: 'Paullinia cupana' },
+  { comun: 'Guayaba', cientifico: 'Psidium guajava' },
+  { comun: 'Guayaba agria', cientifico: 'Psidium friedrichsthalianum' },
+  { comun: 'Guayaba brasilera', cientifico: 'Psidium guineense' },
+  { comun: 'Guayabillo', cientifico: 'Psidium cattleyanum' },
+  { comun: 'Gulupa', cientifico: 'Passiflora edulis f. edulis' },
+  { comun: 'Higo', cientifico: 'Ficus carica' },
+  { comun: 'Jackfruit', cientifico: 'Artocarpus heterophyllus' },
+  { comun: 'Jocote', cientifico: 'Spondias mombin' },
+  { comun: 'Kiwi', cientifico: 'Actinidia deliciosa' },
+  { comun: 'Limón Tahití', cientifico: 'Citrus latifolia' },
+  { comun: 'Limón común', cientifico: 'Citrus limon' },
+  { comun: 'Limón mandarina', cientifico: 'Citrus reticulata × limon' },
+  { comun: 'Lulo', cientifico: 'Solanum quitoense' },
+  { comun: 'Lulo de perro', cientifico: 'Solanum pseudolulo' },
+  { comun: 'Macambo', cientifico: 'Theobroma bicolor' },
+  { comun: 'Mamey', cientifico: 'Mammea americana' },
+  { comun: 'Mamoncillo', cientifico: 'Melicoccus bijugatus' },
+  { comun: 'Mandarina', cientifico: 'Citrus reticulata' },
+  { comun: 'Mango', cientifico: 'Mangifera indica' },
+  { comun: 'Mango de azúcar', cientifico: 'Mangifera indica cv. Azúcar' },
+  { comun: 'Mango Tommy Atkins', cientifico: 'Mangifera indica cv. Tommy Atkins' },
+  { comun: 'Mango Kent', cientifico: 'Mangifera indica cv. Kent' },
+  { comun: 'Mangostino', cientifico: 'Garcinia mangostana' },
+  { comun: 'Maracuyá', cientifico: 'Passiflora edulis f. flavicarpa' },
+  { comun: 'Marañón', cientifico: 'Anacardium occidentale' },
+  { comun: 'Melón', cientifico: 'Cucumis melo' },
+  { comun: 'Milpesos', cientifico: 'Oenocarpus bataua' },
+  { comun: 'Mora de castilla', cientifico: 'Rubus glaucus' },
+  { comun: 'Mora silvestre', cientifico: 'Rubus bogotensis' },
+  { comun: 'Mortiño', cientifico: 'Vaccinium meridionale' },
+  { comun: 'Nancite', cientifico: 'Byrsonima crassifolia' },
+  { comun: 'Naranja', cientifico: 'Citrus sinensis' },
+  { comun: 'Naranjilla', cientifico: 'Solanum quitoense' },
+  { comun: 'Noni', cientifico: 'Morinda citrifolia' },
+  { comun: 'Papaya', cientifico: 'Carica papaya' },
+  { comun: 'Papayuela', cientifico: 'Vasconcellea cundinamarcensis' },
+  { comun: 'Pera', cientifico: 'Pyrus communis' },
+  { comun: 'Piña', cientifico: 'Ananas comosus' },
+  { comun: 'Piña MD2', cientifico: 'Ananas comosus cv. MD2' },
+  { comun: 'Pitahaya amarilla', cientifico: 'Selenicereus megalanthus' },
+  { comun: 'Pitahaya roja', cientifico: 'Hylocereus undatus' },
+  { comun: 'Plátano dominico', cientifico: 'Musa acuminata' },
+  { comun: 'Plátano hartón', cientifico: 'Musa paradisiaca cv. Hartón' },
+  { comun: 'Pomelo', cientifico: 'Citrus maxima' },
+  { comun: 'Sapote', cientifico: 'Quararibea cordata' },
+  { comun: 'Sandía', cientifico: 'Citrullus lanatus' },
+  { comun: 'Tamarindo', cientifico: 'Tamarindus indica' },
+  { comun: 'Tomatillo', cientifico: 'Physalis angulata' },
+  { comun: 'Tomate de árbol', cientifico: 'Solanum betaceum' },
+  { comun: 'Uchuva', cientifico: 'Physalis peruviana' },
+  { comun: 'Uva', cientifico: 'Vitis vinifera' },
+  { comun: 'Uva caimarona', cientifico: 'Pourouma cecropiifolia' },
+  { comun: 'Uva de monte', cientifico: 'Coccoloba uvifera' },
+  { comun: 'Zapote', cientifico: 'Pouteria sapota' },
+  { comun: 'Zapote de monte', cientifico: 'Matisia cordata' },
+  { comun: 'Zarzamora', cientifico: 'Rubus ulmifolius' },
+];
+
+let dropSelected = {};
+
+function onComunInput(idx, val) {
+  tempSpecies[idx].comun = val;
+  dropSelected[idx] = -1;
+  const drop = document.getElementById('drop-' + idx);
+  if (!val.trim()) { drop.style.display = 'none'; return; }
+  const matches = CATALOGO_FRUTAS.filter(f => f.comun.toLowerCase().includes(val.toLowerCase())).slice(0, 8);
+  if (!matches.length) { drop.style.display = 'none'; return; }
+  drop.innerHTML = matches.map((f, mi) => `
+    <div class="autocomplete-item" data-idx="${mi}" onmousedown="selectFruta(${idx}, '${f.comun.replace(/'/g,"\\'")}', '${f.cientifico.replace(/'/g,"\\'")}')">
+      <span>${f.comun}</span>
+      <span class="sci">${f.cientifico}</span>
+    </div>
+  `).join('');
+  drop.style.display = 'block';
+}
+
+function onComunKey(e, idx) {
+  const drop = document.getElementById('drop-' + idx);
+  const items = drop.querySelectorAll('.autocomplete-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    dropSelected[idx] = Math.min((dropSelected[idx] || -1) + 1, items.length - 1);
+    items.forEach((it, i) => it.classList.toggle('selected', i === dropSelected[idx]));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    dropSelected[idx] = Math.max((dropSelected[idx] || 0) - 1, 0);
+    items.forEach((it, i) => it.classList.toggle('selected', i === dropSelected[idx]));
+  } else if (e.key === 'Enter' && dropSelected[idx] >= 0) {
+    e.preventDefault();
+    items[dropSelected[idx]].dispatchEvent(new MouseEvent('mousedown'));
+  } else if (e.key === 'Escape') {
+    closeDropdown(idx);
+  }
+}
+
+function selectFruta(idx, comun, cientifico) {
+  tempSpecies[idx].comun = comun;
+  tempSpecies[idx].cientifico = cientifico;
+  const ci = document.getElementById('comun-' + idx);
+  const sc = document.getElementById('cient-' + idx);
+  if (ci) ci.value = comun;
+  if (sc) { sc.value = cientifico; sc.style.fontStyle = 'italic'; }
+  closeDropdown(idx);
+}
+
+function closeDropdown(idx) {
+  const drop = document.getElementById('drop-' + idx);
+  if (drop) drop.style.display = 'none';
+}
+
+function handlePhoto(e, idx) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => { tempPhotos[idx] = ev.target.result; tempSpecies[idx].foto = ev.target.result; renderSpeciesEntries(); };
+  r.readAsDataURL(file);
+}
+
+function clearPhoto(idx) { delete tempPhotos[idx]; tempSpecies[idx].foto = null; renderSpeciesEntries(); }
+
+// ── GUARDAR MIEMBRO ───────────────────────────────
+async function guardarMiembro() {
+  const nombre = document.getElementById('inp-nombre').value.trim();
+  const proyecto = document.getElementById('inp-proyecto').value.trim();
+  const depto = document.getElementById('inp-depto').value;
+  const municipio = document.getElementById('inp-municipio').value;
+  const regionManual = document.getElementById('inp-region-manual').value.trim();
+  const maps = document.getElementById('inp-maps').value.trim();
+  const notas = document.getElementById('inp-notas').value.trim();
+
+  let region = '';
+  if (depto === 'otro') {
+    region = regionManual;
+  } else if (depto && municipio) {
+    region = municipio + ', ' + depto;
+  } else if (depto) {
+    region = depto;
+  }
+
+  if (!nombre) { showAlert('reg', 'Por favor ingresa el nombre del miembro.', 'err'); return; }
+  if (!tempSpecies.length) { showAlert('reg', 'Agrega al menos una especie cultivada.', 'err'); return; }
+  if (tempSpecies.find(f => !f.comun.trim())) { showAlert('reg', 'Completa el nombre común de todas las especies.', 'err'); return; }
+
+  const btn = document.querySelector('#tab-registrar .btn-primary');
+  btn.textContent = 'Guardando...'; btn.disabled = true;
+
+  try {
+    const { data: miembro, error: errM } = await db.from('miembros').insert({ nombre, proyecto, region, maps, notas }).select().single();
+    if (errM) throw errM;
+
+    const especiesData = tempSpecies.map(f => ({
+      miembro_id: miembro.id,
+      nombre_comun: f.comun,
+      nombre_cientifico: f.cientifico || null,
+      foto_url: f.foto || null
+    }));
+
+    const { error: errE } = await db.from('especies').insert(especiesData);
+    if (errE) throw errE;
+
+    showAlert('reg', `✓ Miembro "${nombre}" registrado con ${tempSpecies.length} especie(s).`, 'ok');
+    resetForm();
+  } catch (err) {
+    showAlert('reg', 'Error al guardar: ' + err.message, 'err');
+  } finally {
+    btn.textContent = 'Guardar miembro'; btn.disabled = false;
+  }
+}
+
+function resetForm() {
+  document.getElementById('inp-nombre').value = '';
+  document.getElementById('inp-proyecto').value = '';
+  document.getElementById('inp-maps').value = '';
+  document.getElementById('inp-notas').value = '';
+  document.getElementById('inp-depto').value = '';
+  document.getElementById('inp-municipio').value = '';
+  document.getElementById('inp-municipio').disabled = true;
+  document.getElementById('inp-municipio').innerHTML = '<option value="">— Primero selecciona departamento —</option>';
+  document.getElementById('inp-region-manual').value = '';
+  document.getElementById('region-manual-wrap').style.display = 'none';
+  tempSpecies = []; tempPhotos = {}; renderSpeciesEntries();
+}
+
+function showAlert(zone, msg, type) {
+  const el = document.getElementById('alert-' + zone);
+  el.textContent = msg; el.className = 'alert alert-' + (type === 'ok' ? 'ok' : 'err'); el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+// ── CATALOGO ──────────────────────────────────────
+async function cargarYRenderCatalogo() {
+  document.getElementById('catalogo-list').innerHTML = '<div class="loading"><div class="spinner"></div><br>Cargando...</div>';
+  const { data, error } = await db.from('miembros').select('*, especies(*)').order('created_at', { ascending: false });
+  if (error) { document.getElementById('catalogo-list').innerHTML = '<div class="empty">Error al cargar datos.</div>'; return; }
+  allMiembros = data || [];
+  renderCatalogo();
+}
+
+function renderCatalogo() {
+  const q = (document.getElementById('search').value || '').toLowerCase();
+  const list = document.getElementById('catalogo-list');
+  const filtered = allMiembros.filter(m =>
+    m.nombre.toLowerCase().includes(q) ||
+    (m.proyecto || '').toLowerCase().includes(q) ||
+    (m.region || '').toLowerCase().includes(q) ||
+    (m.especies || []).some(e => e.nombre_comun.toLowerCase().includes(q) || (e.nombre_cientifico || '').toLowerCase().includes(q))
+  );
+  if (!filtered.length) { list.innerHTML = '<div class="empty">No se encontraron miembros.</div>'; return; }
+  list.innerHTML = filtered.map(m => `
+    <div class="member-card">
+      <div class="member-header">
+        <div class="avatar">${initials(m.nombre)}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="member-name">${m.nombre}</div>
+          <div class="member-meta">
+            ${m.proyecto ? `<span class="project-badge">${m.proyecto}</span>` : ''}
+            <span>${m.region || 'Sin región'}</span>
+            <span>·</span>
+            <span>${(m.especies || []).length} especie(s)</span>
+            ${m.maps ? `<a href="${m.maps}" target="_blank" class="maps-link">📍 Ver en Maps</a>` : ''}
+          </div>
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="eliminarMiembro('${m.id}')">Eliminar</button>
+      </div>
+      <div>
+        ${(m.especies || []).map(e => `
+          <div class="species-item">
+            ${e.foto_url
+              ? `<img src="${e.foto_url}" class="species-thumb"/>`
+              : `<div class="species-icon">🍈</div>`}
+            <div>
+              <div class="species-common">${e.nombre_comun}</div>
+              ${e.nombre_cientifico ? `<div class="species-sci">${e.nombre_cientifico}</div>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      ${m.notas ? `<p style="font-size:0.78rem;color:var(--text-muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--green-faint);">${m.notas}</p>` : ''}
+    </div>
+  `).join('');
+}
+
+async function eliminarMiembro(id) {
+  if (!confirm('¿Seguro que deseas eliminar este miembro y todas sus especies?')) return;
+  await db.from('miembros').delete().eq('id', id);
+  allMiembros = allMiembros.filter(m => m.id !== id);
+  renderCatalogo();
+}
+
+// ── ESTADISTICAS ──────────────────────────────────
+async function cargarYRenderStats() {
+  const { data } = await db.from('miembros').select('*, especies(*)');
+  const miembros = data || [];
+  const total = miembros.length;
+  const allEsp = miembros.flatMap(m => m.especies || []);
+  const unicas = [...new Set(allEsp.map(e => e.nombre_comun.toLowerCase()))].length;
+  const prom = total ? (allEsp.length / total).toFixed(1) : 0;
+  const conMaps = miembros.filter(m => m.maps).length;
+
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Miembros registrados</div></div>
+    <div class="stat-card"><div class="stat-num">${unicas}</div><div class="stat-label">Especies únicas</div></div>
+    <div class="stat-card"><div class="stat-num">${prom}</div><div class="stat-label">Promedio por miembro</div></div>
+    <div class="stat-card"><div class="stat-num">${conMaps}</div><div class="stat-label">Con ubicación</div></div>
+  `;
+
+  const freq = {};
+  allEsp.forEach(e => { freq[e.nombre_comun] = (freq[e.nombre_comun] || 0) + 1; });
+  const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
+  const max = sorted.length ? sorted[0][1] : 1;
+
+  document.getElementById('frutas-ranking').innerHTML = !sorted.length
+    ? '<div class="empty">Sin datos aún.</div>'
+    : sorted.map(([f, c]) => `
+      <div class="rank-row">
+        <span>${f}</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${Math.round(c/max*100)}%"></div></div>
+          <span class="badge">${c} miembro${c > 1 ? 's' : ''}</span>
+        </div>
+      </div>
+    `).join('');
+}
+
+// ── EXPORTAR EXCEL ────────────────────────────────
+function exportarExcel() {
+  if (!allMiembros.length) { alert('No hay datos para exportar.'); return; }
+  const filas = [];
+  allMiembros.forEach(m => {
+    (m.especies || []).forEach((e, i) => {
+      filas.push({
+        'Miembro': i === 0 ? m.nombre : '',
+        'Proyecto': i === 0 ? (m.proyecto || '') : '',
+        'Región': i === 0 ? (m.region || '') : '',
+        'Ubicación Maps': i === 0 ? (m.maps || '') : '',
+        'Notas': i === 0 ? (m.notas || '') : '',
+        'Nombre común': e.nombre_comun,
+        'Nombre científico': e.nombre_cientifico || '',
+        'Tiene foto': e.foto_url ? 'Sí' : 'No'
+      });
+    });
+    filas.push({ 'Miembro':'','Proyecto':'','Región':'','Ubicación Maps':'','Notas':'','Nombre común':'','Nombre científico':'','Tiene foto':'' });
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(filas);
+  ws['!cols'] = [{wch:22},{wch:22},{wch:16},{wch:36},{wch:28},{wch:20},{wch:24},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Registro de Especies');
+  XLSX.writeFile(wb, 'Registro_Especies_Asociacion.xlsx');
+}
+
+// ── MUNICIPIOS DE COLOMBIA ────────────────────────
+const MUNICIPIOS = {
+  'Amazonas': ['Leticia','El Encanto','La Chorrera','La Pedrera','La Victoria','Mirití-Paraná','Puerto Alegría','Puerto Arica','Puerto Nariño','Puerto Santander','Tarapacá'],
+  'Antioquia': ['Medellín','Abejorral','Abriaquí','Alejandría','Amagá','Amalfi','Andes','Angelópolis','Angostura','Anorí','Anzá','Apartadó','Arboletes','Argelia','Armenia','Barbosa','Bello','Betania','Betulia','Briceño','Buriticá','Cáceres','Caicedo','Caldas','Campamento','Cañasgordas','Caracolí','Caramanta','Carepa','Carolina del Príncipe','Caucasia','Chigorodó','Cisneros','Cocorná','Concepción','Concordia','Copacabana','Dabeiba','Don Matías','Ebéjico','El Bagre','El Carmen de Viboral','El Santuario','Entrerríos','Envigado','Fredonia','Frontino','Giraldo','Girardota','Gómez Plata','Granada','Guadalupe','Guarne','Guatapé','Heliconia','Hispania','Itagüí','Ituango','Jardín','Jericó','La Ceja','La Estrella','La Pintada','La Unión','Liborina','Maceo','Marinilla','Montebello','Murindó','Mutatá','Nariño','Nechí','Necoclí','Olaya','Peñol','Peque','Pueblorrico','Puerto Berrío','Puerto Nare','Puerto Triunfo','Remedios','Retiro','Rionegro','Sabanalarga','Sabaneta','Salgar','San Andrés de Cuerquia','San Carlos','San Francisco','San Jerónimo','San José de la Montaña','San Juan de Urabá','San Luis','San Pedro','San Pedro de Urabá','San Rafael','San Roque','San Vicente','Santa Bárbara','Santa Rosa de Osos','Santo Domingo','Segovia','Sonsón','Sopetrán','Tarazá','Tarso','Titiribí','Toledo','Turbo','Uramita','Urrao','Valdivia','Valparaíso','Vegachí','Venecia','Vigía del Fuerte','Yalí','Yarumal','Yolombó','Yondó','Zaragoza'],
+  'Arauca': ['Arauca','Arauquita','Cravo Norte','Fortul','Puerto Rondón','Saravena','Tame'],
+  'Atlántico': ['Barranquilla','Baranoa','Campo de la Cruz','Candelaria','Galapa','Juan de Acosta','Luruaco','Malambo','Manatí','Palmar de Varela','Piojó','Polonuevo','Ponedera','Puerto Colombia','Repelón','Sabanagrande','Sabanalarga','Santa Lucía','Santo Tomás','Soledad','Suan','Tubará','Usiacurí'],
+  'Bolívar': ['Cartagena','Achí','Altos del Rosario','Arenal','Arjona','Arroyohondo','Barranco de Loba','Calamar','Cantagallo','Cicuco','Clemencia','Córdoba','El Carmen de Bolívar','El Guamo','El Peñón','Hatillo de Loba','Magangué','Mahates','Margarita','María la Baja','Mompós','Montecristo','Morales','Norosí','Pinillos','Regidor','Río Viejo','San Cristóbal','San Estanislao','San Fernando','San Jacinto','San Jacinto del Cauca','San Juan Nepomuceno','San Martín de Loba','San Pablo','Santa Catalina','Santa Rosa','Santa Rosa del Sur','Simití','Soplaviento','Talaigua Nuevo','Tiquisio','Turbaco','Turbaná','Villanueva','Zambrano'],
+  'Boyacá': ['Tunja','Almeida','Aquitania','Arcabuco','Belén','Berbeo','Betéitiva','Boavita','Boyacá','Briceño','Buenavista','Busbanzá','Caldas','Campohermoso','Cerinza','Chinavita','Chiquinquirá','Chíquiza','Chiscas','Chita','Chitaraque','Chivatá','Ciénega','Cómbita','Coper','Corrales','Covarachía','Cubará','Cucaita','Cuítiva','Duitama','El Cocuy','El Espino','Firavitoba','Floresta','Gachantivá','Gameza','Garagoa','Guacamayas','Guateque','Guayatá','Güicán','Iza','Jenesano','Jericó','La Capilla','La Uvita','La Victoria','Labranzagrande','Macanal','Maripí','Miraflores','Mongua','Monguí','Moniquirá','Motavita','Muzo','Nobsa','Nuevo Colón','Oicatá','Otanche','Pachavita','Páez','Paipa','Pajarito','Panqueba','Pauna','Paya','Paz de Río','Pesca','Pisba','Puerto Boyacá','Quípama','Ramiriquí','Ráquira','Rondón','Saboyá','Sáchica','Samacá','San Eduardo','San José de Pare','San Luis de Gaceno','San Mateo','San Miguel de Sema','San Pablo de Borbur','Santa María','Santa Rosa de Viterbo','Santa Sofía','Santana','Sativanorte','Sativasur','Siachoque','Soatá','Socotá','Socha','Sogamoso','Somondoco','Sora','Soracá','Sotaquirá','Susacón','Sutamarchán','Sutatenza','Tasco','Tenza','Tibaná','Tibasosa','Tinjacá','Tipacoque','Toca','Togüí','Tópaga','Tota','Turmequé','Tuta','Tutazá','Úmbita','Ventaquemada','Villa de Leyva','Viracachá','Zetaquira'],
+  'Caldas': ['Manizales','Aguadas','Anserma','Aranzazu','Belalcázar','Chinchiná','Filadelfia','La Dorada','La Merced','Manzanares','Marmato','Marquetalia','Marulanda','Neira','Norcasia','Pácora','Palestina','Pensilvania','Riosucio','Risaralda','Salamina','Samaná','San José','Supía','Victoria','Villamaría','Viterbo'],
+  'Caquetá': ['Florencia','Albania','Belén de los Andaquíes','Cartagena del Chairá','Curillo','El Doncello','El Paujíl','La Montañita','Milán','Morelia','Puerto Rico','San José del Fragua','San Vicente del Caguán','Solano','Solita','Valparaíso'],
+  'Casanare': ['Yopal','Aguazul','Chámeza','Hato Corozal','La Salina','Maní','Monterrey','Nunchía','Orocué','Paz de Ariporo','Pore','Recetor','Sabanalarga','Sácama','San Luis de Palenque','Tauramena','Trinidad','Villanueva'],
+  'Cauca': ['Popayán','Almaguer','Argelia','Balboa','Bolívar','Buenos Aires','Cajibío','Caldono','Caloto','Corinto','El Tambo','Florencia','Guachené','Guapí','Inzá','Jambaló','La Sierra','La Vega','López de Micay','Mercaderes','Miranda','Morales','Padilla','Páez','Patía','Piamonte','Piendamó','Puerto Tejada','Puracé','Rosas','San Sebastián','Santa Rosa','Santander de Quilichao','Silvia','Sotara','Suárez','Sucre','Timbío','Timbiquí','Toribío','Totoró','Villa Rica'],
+  'Cesar': ['Valledupar','Aguachica','Agustín Codazzi','Astrea','Becerril','Bosconia','Chimichagua','Chiriguaná','Curumaní','El Copey','El Paso','Gamarra','González','La Gloria','La Jagua de Ibirico','La Paz','Manaure Balcón del Cesar','Pailitas','Pelaya','Pueblo Bello','Río de Oro','Robles','San Alberto','San Diego','San Martín','Tamalameque'],
+  'Chocó': ['Quibdó','Acandí','Alto Baudó','Atrato','Bagadó','Bahía Solano','Bajo Baudó','Belén de Bajirá','Bojayá','Carmen del Darién','Cértegui','Condoto','El Carmen de Atrato','El Litoral del San Juan','Istmina','Juradó','Lloró','Medio Atrato','Medio Baudó','Medio San Juan','Nóvita','Nuquí','Río Iro','Río Quito','Riosucio','San José del Palmar','Sipí','Tadó','Unguía','Unión Panamericana'],
+  'Córdoba': ['Montería','Ayapel','Buenavista','Canalete','Cereté','Chimá','Chinú','Ciénaga de Oro','Cotorra','La Apartada','Lorica','Los Córdobas','Momil','Montelíbano','Moñitos','Planeta Rica','Pueblo Nuevo','Puerto Escondido','Puerto Libertador','Purísima','Sahagún','San Andrés de Sotavento','San Antero','San Bernardo del Viento','San Carlos','San José de Uré','San Pelayo','Tierralta','Tuchín','Valencia'],
+  'Cundinamarca': ['Bogotá D.C.','Agua de Dios','Albán','Anapoima','Anolaima','Arbeláez','Beltrán','Bituima','Bojacá','Cabrera','Cachipay','Cajicá','Caparrapí','Cáqueza','Carmen de Carupa','Chaguaní','Chía','Chipaque','Choachí','Chocontá','Cogua','Cota','Cucunubá','El Colegio','El Peñón','El Rosal','Facatativá','Fomeque','Fosca','Funza','Fúquene','Fusagasugá','Gachalá','Gachancipá','Gachetá','Gama','Girardot','Granada','Guachetá','Guaduas','Guasca','Guataquí','Guatavita','Guayabal de Síquima','Guayabetal','Gutiérrez','Jerusalén','Junín','La Calera','La Mesa','La Palma','La Peña','La Vega','Labateca','Lenguazaque','Machetá','Madrid','Manta','Medina','Mosquera','Nariño','Nemocón','Nilo','Nimaima','Nocaima','Ospina Pérez','Pacho','Paime','Pandi','Paratebueno','Pasca','Puerto Salgar','Pulí','Quebradanegra','Quetame','Quipile','Ricaurte','San Antonio del Tequendama','San Bernardo','San Cayetano','San Francisco','San Juan de Río Seco','Sasaima','Sesquilé','Sibaté','Silvania','Simijaca','Soacha','Sopó','Subachoque','Suesca','Supatá','Susa','Sutatausa','Tabio','Tausa','Tena','Tibacuy','Tibiritá','Tocaima','Tocancipá','Topaipí','Ubalá','Ubaque','Une','Útica','Vergara','Vianí','Villa de San Diego de Ubaté','Villagómez','Villapinzón','Villeta','Viotá','Yacopí','Zipacón','Zipaquirá'],
+  'Guainía': ['Inírida','Barranco Minas','Cacahual','La Guadalupe','Mapiripana','Morichal','Pana Pana','Puerto Colombia','San Felipe'],
+  'Guaviare': ['San José del Guaviare','Calamar','El Retorno','Miraflores'],
+  'Huila': ['Neiva','Acevedo','Agrado','Aipe','Algeciras','Altamira','Baraya','Campoalegre','Colombia','Elías','Garzón','Gigante','Guadalupe','Hobo','Iquira','Isnos','La Argentina','La Plata','Nátaga','Oporapa','Paicol','Palermo','Palestina','Pital','Pitalito','Rivera','Saladoblanco','San Agustín','Santa María','Suaza','Tarqui','Tello','Teruel','Tesalia','Timaná','Villavieja','Yaguará'],
+  'La Guajira': ['Riohacha','Albania','Barrancas','Dibulla','Distracción','El Molino','Fonseca','Hatonuevo','La Jagua del Pilar','Maicao','Manaure','San Juan del Cesar','Uribia','Urumita','Villanueva'],
+  'Magdalena': ['Santa Marta','Algarrobo','Aracataca','Ariguaní','Cerro de San Antonio','Chivolo','Ciénaga','Concordia','El Banco','El Piñón','El Retén','Fundación','Guamal','Nueva Granada','Pedraza','Pijiño del Carmen','Pivijay','Plato','Puebloviejo','Remolino','Sabanas de San Ángel','Salamina','San Sebastián de Buenavista','San Zenón','Santa Ana','Santa Bárbara de Pinto','Sitionuevo','Tenerife','Zapayán','Zona Bananera'],
+  'Meta': ['Villavicencio','Acacías','Barranca de Upía','Cabuyaro','Castilla la Nueva','Cubarral','Cumaral','El Calvario','El Castillo','El Dorado','Fuente de Oro','Granada','Guamal','La Macarena','La Uribe','Lejanías','Mapiripán','Mesetas','Puerto Concordia','Puerto Gaitán','Puerto Lleras','Puerto López','Puerto Rico','Restrepo','San Carlos de Guaroa','San Juan de Arama','San Juanito','San Martín','Vistahermosa'],
+  'Nariño': ['Pasto','Albán','Aldana','Ancuyá','Arboleda','Barbacoas','Belén','Buesaco','Chachagüí','Colón','Consacá','Contadero','Córdoba','Cuaspud','Cumbal','Cumbitara','El Charco','El Peñol','El Rosario','El Tablón de Gómez','El Tambo','Francisco Pizarro','Funes','Guachucal','Guaitarilla','Gualmatán','Iles','Imués','Ipiales','La Cruz','La Florida','La Llanada','La Tola','La Unión','Leiva','Linares','Los Andes','Magüí','Mallama','Mosquera','Nariño','Olaya Herrera','Ospina','Policarpa','Potosí','Providencia','Puerres','Pupiales','Ricaurte','Roberto Payán','Samaniego','San Bernardo','San Lorenzo','San Pablo','San Pedro de Cartago','Sandoná','Santa Bárbara','Santacruz','Sapuyes','Taminango','Tangua','Tumaco','Túquerres','Yacuanquer'],
+  'Norte de Santander': ['Cúcuta','Abrego','Arboledas','Bochalema','Bucarasica','Cachirá','Cáchira','Chinácota','Chitagá','Convención','Cucutilla','Durania','El Carmen','El Tarra','El Zulia','Gramalote','Hacarí','Herrán','La Esperanza','La Playa','Labateca','Los Patios','Lourdes','Mutiscua','Ocaña','Pamplona','Pamplonita','Puerto Santander','Ragonvalia','Salazar','San Calixto','San Cayetano','Santiago','Santo Tomás','Sardinata','Silos','Teorama','Tibú','Toledo','Villa Caro','Villa del Rosario'],
+  'Putumayo': ['Mocoa','Colón','Orito','Puerto Asís','Puerto Caicedo','Puerto Guzmán','Puerto Leguízamo','San Francisco','San Miguel','Santiago','Sibundoy','Valle del Guamuez','Villagarzón'],
+  'Quindío': ['Armenia','Buenavista','Calarcá','Circasia','Córdoba','Filandia','Génova','La Tebaida','Montenegro','Pijao','Quimbaya','Salento'],
+  'Risaralda': ['Pereira','Apía','Balboa','Belén de Umbría','Dosquebradas','Guática','La Celia','La Virginia','Marsella','Mistrató','Pueblo Rico','Quinchía','Santa Rosa de Cabal','Santuario'],
+  'San Andrés y Providencia': ['San Andrés','Providencia'],
+  'Santander': ['Bucaramanga','Aguada','Albania','Aratoca','Barbosa','Barichara','Barrancabermeja','Betulia','Bolívar','Cabrera','California','Capitanejo','Carcasí','Cepitá','Cerrito','Charalá','Charta','Chima','Chipatá','Cimitarra','Concepción','Confines','Contratación','Coromoro','Curití','El Carmen de Chucurí','El Guacamayo','El Peñón','El Playón','Encino','Enciso','Florián','Floridablanca','Galán','Gámbita','Girón','Guaca','Guadalupe','Guapotá','Guavatá','Güepsa','Hato','Jesús María','Jordán','La Belleza','La Paz','Landázuri','Lebrija','Los Santos','Macaravita','Málaga','Matanza','Mogotes','Molagavita','Ocamonte','Oiba','Onzaga','Palmar','Palmas del Socorro','Páramo','Piedecuesta','Pinchote','Puente Nacional','Puerto Parra','Puerto Wilches','Rionegro','Sabana de Torres','San Andrés','San Benito','San Gil','San Joaquín','San José de Miranda','San Miguel','San Vicente de Chucurí','Santa Bárbara','Santa Helena del Opón','Simacota','Socorro','Suaita','Sucre','Suratá','Tona','Valle de San José','Vélez','Vetas','Villanueva','Zapatoca'],
+  'Sucre': ['Sincelejo','Buenavista','Caimito','Chalán','Coloso','Corozal','Coveñas','El Roble','Galeras','Guaranda','La Unión','Los Palmitos','Majagual','Morroa','Ovejas','Palmito','San Benito Abad','San Juan de Betulia','San Luis de Sincé','San Marcos','San Onofre','San Pedro','Santiago de Tolú','Sucre','Tolú Viejo'],
+  'Tolima': ['Ibagué','Alpujarra','Alvarado','Ambalema','Anzoátegui','Armero','Ataco','Cajamarca','Carmen de Apicalá','Casabianca','Chaparral','Coello','Coyaima','Cunday','Dolores','Espinal','Falan','Flandes','Fresno','Guamo','Herveo','Honda','Icononzo','Lérida','Líbano','Mariquita','Melgar','Murillo','Natagaima','Ortega','Palocabildo','Piedras','Planadas','Prado','Purificación','Rioblanco','Roncesvalles','Rovira','Saldaña','San Antonio','San Luis','Santa Isabel','Suárez','Valle de San Juan','Venadillo','Villahermosa','Villarrica'],
+  'Valle del Cauca': ['Cali','Alcalá','Andalucía','Ansermanuevo','Argelia','Bolívar','Buenaventura','Buga','Bugalagrande','Caicedonia','Calima','Candelaria','Cartago','Dagua','El Águila','El Cairo','El Cerrito','El Dovio','Florida','Ginebra','Guacarí','Jamundí','La Cumbre','La Unión','La Victoria','Obando','Palmira','Pradera','Restrepo','Riofrío','Roldanillo','San Pedro','Sevilla','Toro','Trujillo','Tuluá','Ulloa','Versalles','Vijes','Yotoco','Yumbo','Zarzal'],
+  'Vaupés': ['Mitú','Carurú','Papunaua','Taraira','Villa Fátima','Yavaraté'],
+  'Vichada': ['Puerto Carreño','Cumaribo','La Primavera','Santa Rosalía']
+};
+
+function onDeptoChange() {
+  const depto = document.getElementById('inp-depto').value;
+  const munSel = document.getElementById('inp-municipio');
+  const manualWrap = document.getElementById('region-manual-wrap');
+
+  if (depto === 'otro') {
+    munSel.disabled = true;
+    munSel.innerHTML = '<option value="">— No aplica —</option>';
+    manualWrap.style.display = 'block';
+  } else if (depto && MUNICIPIOS[depto]) {
+    munSel.disabled = false;
+    manualWrap.style.display = 'none';
+    munSel.innerHTML = '<option value="">— Selecciona un municipio —</option>' +
+      MUNICIPIOS[depto].map(m => `<option value="${m}">${m}</option>`).join('');
+  } else {
+    munSel.disabled = true;
+    munSel.innerHTML = '<option value="">— Primero selecciona departamento —</option>';
+    manualWrap.style.display = 'none';
+  }
+}
+
+function onMunicipioChange() {}
+
+// Poblar selector de departamentos al cargar
+(function initDeptos() {
+  const sel = document.getElementById('inp-depto');
+  if (!sel) return;
+  const deptos = Object.keys(MUNICIPIOS).sort();
+  sel.innerHTML = '<option value="">— Selecciona un departamento —</option>' +
+    deptos.map(d => `<option value="${d}">${d}</option>`).join('') +
+    '<option value="otro">Otro (fuera de Colombia)</option>';
+})();
+
+// ── UTILS ─────────────────────────────────────────
+function initials(n) { return n.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase(); }
+</script>
+</body>
+</html>
