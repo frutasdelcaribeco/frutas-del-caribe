@@ -385,9 +385,11 @@ async function iniciarSesion() {
   if (!email || !password) { showAuthError('login-error', 'Completa todos los campos.'); return; }
   const btn = document.querySelector('#form-login .login-btn');
   btn.textContent = 'Entrando...'; btn.disabled = true;
-  const { error } = await db.auth.signInWithPassword({ email, password });
+  const { data, error } = await db.auth.signInWithPassword({ email, password });
+  console.log('Login result:', data, error);
   btn.textContent = 'Entrar'; btn.disabled = false;
-  if (error) { showAuthError('login-error', 'Correo o contraseña incorrectos.'); return; }
+  if (error) { showAuthError('login-error', 'Error: ' + error.message); return; }
+  if (!data.session) { showAuthError('login-error', 'No se pudo iniciar sesión. Intenta de nuevo.'); return; }
 }
 
 async function registrarse() {
