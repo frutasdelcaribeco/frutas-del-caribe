@@ -346,9 +346,23 @@
 <script>
 const SUPABASE_URL = 'https://nyyhmhgbomtntvklnyuy.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55eWhtaGdib210bnR2a2xueXV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NDU0MjIsImV4cCI6MjA5MjAyMTQyMn0.inDPLyqARUQ7AI8McRx4y8kHIJTBWrSLgW31eVWiBf0';
-const ADMIN_EMAIL = 'frutasdelcaribeco@gmail.com';
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const ADMIN_EMAIL = 'REEMPLAZA_CON_TU_CORREO';
+let db;
+window.addEventListener('load', () => {
+  db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  db.auth.onAuthStateChange((event, session) => {
+    if (session) {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('user-email-label').textContent = session.user.email;
+      if (session.user.email === ADMIN_EMAIL) {
+        document.getElementById('btn-admin-tab').style.display = 'inline-block';
+      }
+    } else {
+      document.getElementById('login-screen').classList.remove('hidden');
+      document.getElementById('btn-admin-tab').style.display = 'none';
+    }
+  });
+});
 
 // ── AUTH ──────────────────────────────────────────
 function switchAuthTab(tab) {
@@ -453,20 +467,6 @@ async function eliminarCodigo(id) {
   await db.from('codigos_invitacion').delete().eq('id', id);
   cargarListaCodigos();
 }
-
-// ── INIT AUTH ─────────────────────────────────────
-db.auth.onAuthStateChange((event, session) => {
-  if (session) {
-    document.getElementById('login-screen').classList.add('hidden');
-    document.getElementById('user-email-label').textContent = session.user.email;
-    if (session.user.email === ADMIN_EMAIL) {
-      document.getElementById('btn-admin-tab').style.display = 'inline-block';
-    }
-  } else {
-    document.getElementById('login-screen').classList.remove('hidden');
-    document.getElementById('btn-admin-tab').style.display = 'none';
-  }
-});
 
 let tempSpecies = [];
 let tempPhotos = {};
@@ -1050,14 +1050,16 @@ async function guardarMiembro() {
   btn.textContent = 'Guardando...'; btn.disabled = true;
 
   try {
-    const { data: miembro, error: errM } = await db.from('miembros').insert({ nombre, proyecto, region, maps, notas }).select().single();
+    const { data: { user } } = await db.auth.getUser();
+    const { data: miembro, error: errM } = await db.from('miembros').insert({ nombre, proyecto, region, maps, notas, user_id: user.id }).select().single();
     if (errM) throw errM;
 
     const especiesData = tempSpecies.map(f => ({
       miembro_id: miembro.id,
       nombre_comun: f.comun,
       nombre_cientifico: f.cientifico || null,
-      foto_url: f.foto || null
+      foto_url: f.foto || null,
+      user_id: user.id
     }));
 
     const { error: errE } = await db.from('especies').insert(especiesData);
@@ -1111,6 +1113,8 @@ function renderCatalogo() {
     (m.especies || []).some(e => e.nombre_comun.toLowerCase().includes(q) || (e.nombre_cientifico || '').toLowerCase().includes(q))
   );
   if (!filtered.length) { list.innerHTML = '<div class="empty">No se encontraron miembros.</div>'; return; }
+  const { data: { user } } = await db.auth.getUser();
+  const uid = user ? user.id : null;
   list.innerHTML = filtered.map(m => `
     <div class="member-card">
       <div class="member-header">
@@ -1125,7 +1129,7 @@ function renderCatalogo() {
             ${m.maps ? `<a href="${m.maps}" target="_blank" class="maps-link">📍 Ver en Maps</a>` : ''}
           </div>
         </div>
-        <button class="btn btn-sm btn-danger" onclick="eliminarMiembro('${m.id}')">Eliminar</button>
+        ${m.user_id === uid ? `<button class="btn btn-sm btn-danger" onclick="eliminarMiembro('${m.id}')">Eliminar</button>` : ''}
       </div>
       <div>
         ${(m.especies || []).map(e => `
@@ -1137,7 +1141,7 @@ function renderCatalogo() {
               <div class="species-common">${e.nombre_comun}</div>
               ${e.nombre_cientifico ? `<div class="species-sci">${e.nombre_cientifico}</div>` : ''}
             </div>
-            <button class="btn btn-sm btn-danger" onclick="eliminarEspecie('${e.id}', '${m.id}')">✕</button>
+            ${e.user_id === uid ? `<button class="btn btn-sm btn-danger" onclick="eliminarEspecie('${e.id}', '${m.id}')">✕</button>` : ''}
           </div>
         `).join('')}
       </div>
@@ -1385,11 +1389,13 @@ async function guardarEspeciesExistente() {
   btn.textContent = 'Guardando...'; btn.disabled = true;
 
   try {
+    const { data: { user } } = await db.auth.getUser();
     const especiesData = tempSpeciesExistente.map(f => ({
       miembro_id: miembroSeleccionadoId,
       nombre_comun: f.comun,
       nombre_cientifico: f.cientifico || null,
-      foto_url: f.foto || null
+      foto_url: f.foto || null,
+      user_id: user.id
     }));
     const { error } = await db.from('especies').insert(especiesData);
     if (error) throw error;
