@@ -179,9 +179,23 @@
     <!-- Login form -->
     <div id="form-login">
       <input type="email" id="login-email" placeholder="Correo electrónico" style="margin-bottom:0.75rem;text-align:left;letter-spacing:0;"/>
-      <input type="password" id="login-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter') iniciarSesion()" style="text-align:left;letter-spacing:0;"/>
+      <input type="password" id="login-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter') iniciarSesion()" style="text-align:left;letter-spacing:0;margin-bottom:0.5rem;"/>
+      <div style="text-align:right;margin-bottom:0.75rem;">
+        <a href="#" onclick="switchAuthTab('reset');return false;" style="font-size:0.78rem;color:#2e6b35;text-decoration:none;">¿Olvidaste tu contraseña?</a>
+      </div>
       <div class="login-error" id="login-error"></div>
       <button class="login-btn" onclick="iniciarSesion()">Entrar</button>
+    </div>
+
+    <!-- Reset password form -->
+    <div id="form-reset" style="display:none;">
+      <p style="font-size:0.82rem;color:#5a6a5c;margin-bottom:1rem;">Escribe tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
+      <input type="email" id="reset-email" placeholder="Correo electrónico" onkeydown="if(event.key==='Enter') enviarReset()" style="text-align:left;letter-spacing:0;"/>
+      <div class="login-error" id="reset-error"></div>
+      <button class="login-btn" onclick="enviarReset()" style="margin-top:0.75rem;">Enviar enlace</button>
+      <div style="text-align:center;margin-top:0.75rem;">
+        <a href="#" onclick="switchAuthTab('login');return false;" style="font-size:0.78rem;color:#2e6b35;text-decoration:none;">Volver al inicio de sesión</a>
+      </div>
     </div>
 
     <!-- Register form -->
@@ -368,10 +382,28 @@ window.addEventListener('load', async () => {
 function switchAuthTab(tab) {
   document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
   document.getElementById('form-register').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('form-reset').style.display = tab === 'reset' ? 'block' : 'none';
   document.getElementById('tab-login-btn').style.cssText = tab === 'login' ? 'flex:1;padding:8px;border:none;background:none;font-family:DM Sans,sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;color:#1a6b42;border-bottom:2px solid #1a6b42;' : 'flex:1;padding:8px;border:none;background:none;font-family:DM Sans,sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;color:#999;border-bottom:2px solid transparent;';
   document.getElementById('tab-register-btn').style.cssText = tab === 'register' ? 'flex:1;padding:8px;border:none;background:none;font-family:DM Sans,sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;color:#1a6b42;border-bottom:2px solid #1a6b42;' : 'flex:1;padding:8px;border:none;background:none;font-family:DM Sans,sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;color:#999;border-bottom:2px solid transparent;';
   document.getElementById('login-error').style.display = 'none';
   document.getElementById('reg-error').style.display = 'none';
+  if (document.getElementById('reset-error')) document.getElementById('reset-error').style.display = 'none';
+}
+
+async function enviarReset() {
+  const email = document.getElementById('reset-email').value.trim();
+  if (!email) { showAuthError('reset-error', 'Ingresa tu correo electrónico.'); return; }
+  const btn = document.querySelector('#form-reset .login-btn');
+  btn.textContent = 'Enviando...'; btn.disabled = true;
+  const { error } = await db.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.href
+  });
+  btn.textContent = 'Enviar enlace'; btn.disabled = false;
+  if (error) { showAuthError('reset-error', 'Error: ' + error.message); return; }
+  const el = document.getElementById('reset-error');
+  el.textContent = '✓ Correo enviado. Revisa tu bandeja de entrada.';
+  el.style.display = 'block';
+  el.style.background = '#EAF3DE'; el.style.color = '#1a6b42'; el.style.borderColor = '#a8cca9';
 }
 
 function showAuthError(id, msg) {
