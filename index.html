@@ -348,7 +348,7 @@ const SUPABASE_URL = 'https://nyyhmhgbomtntvklnyuy.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55eWhtaGdib210bnR2a2xueXV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NDU0MjIsImV4cCI6MjA5MjAyMTQyMn0.inDPLyqARUQ7AI8McRx4y8kHIJTBWrSLgW31eVWiBf0';
 const ADMIN_EMAIL = 'REEMPLAZA_CON_TU_CORREO';
 let db;
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   db.auth.onAuthStateChange((event, session) => {
     if (session) {
@@ -1105,7 +1105,7 @@ async function cargarYRenderCatalogo() {
   renderCatalogo();
 }
 
-function renderCatalogo() {
+async function renderCatalogo() {
   const q = (document.getElementById('search').value || '').toLowerCase();
   const list = document.getElementById('catalogo-list');
   const filtered = allMiembros.filter(m =>
