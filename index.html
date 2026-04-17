@@ -346,7 +346,7 @@
 <script>
 const SUPABASE_URL = 'https://nyyhmhgbomtntvklnyuy.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55eWhtaGdib210bnR2a2xueXV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NDU0MjIsImV4cCI6MjA5MjAyMTQyMn0.inDPLyqARUQ7AI8McRx4y8kHIJTBWrSLgW31eVWiBf0';
-const ADMIN_EMAIL = 'frutasdelcaribeco@gmail.com';
+const ADMIN_EMAIL = 'REEMPLAZA_CON_TU_CORREO';
 
 // ── AUTH ──────────────────────────────────────────
 function switchAuthTab(tab) {
@@ -384,27 +384,31 @@ async function registrarse() {
   const btn = document.querySelector('#form-register .login-btn');
   btn.textContent = 'Verificando...'; btn.disabled = true;
 
-  const { data: codigos } = await db.from('codigos_invitacion').select('*').eq('codigo', codigo).eq('usado', false);
-  if (!codigos || codigos.length === 0) {
-    showAuthError('reg-error', 'Código de invitación inválido o ya utilizado.');
-    btn.textContent = 'Crear cuenta'; btn.disabled = false; return;
-  }
+  try {
+    const { data: codigos, error: errCod } = await db.from('codigos_invitacion').select('*').eq('codigo', codigo).eq('usado', false);
+    if (errCod) { showAuthError('reg-error', 'Error al verificar código: ' + errCod.message); btn.textContent = 'Crear cuenta'; btn.disabled = false; return; }
+    if (!codigos || codigos.length === 0) {
+      showAuthError('reg-error', 'Código de invitación inválido o ya utilizado.');
+      btn.textContent = 'Crear cuenta'; btn.disabled = false; return;
+    }
 
-  const { error } = await db.auth.signUp({ email, password });
-  if (error) {
-    showAuthError('reg-error', error.message);
-    btn.textContent = 'Crear cuenta'; btn.disabled = false; return;
-  }
+    const { data: signData, error: errSign } = await db.auth.signUp({ email, password });
+    if (errSign) { showAuthError('reg-error', 'Error al crear cuenta: ' + errSign.message); btn.textContent = 'Crear cuenta'; btn.disabled = false; return; }
 
-  await db.from('codigos_invitacion').update({ usado: true }).eq('codigo', codigo);
-  btn.textContent = 'Crear cuenta'; btn.disabled = false;
-  showAuthError('reg-error', '');
-  document.getElementById('reg-error').style.display = 'none';
-  switchAuthTab('login');
-  const ok = document.getElementById('login-error');
-  ok.textContent = '✓ Cuenta creada. Ya puedes iniciar sesión.';
-  ok.style.display = 'block';
-  ok.style.background = '#EAF3DE'; ok.style.color = '#1a6b42'; ok.style.borderColor = '#a8cca9';
+    const { error: errUpd } = await db.from('codigos_invitacion').update({ usado: true }).eq('codigo', codigo);
+    if (errUpd) console.error('Error marcando código:', errUpd.message);
+
+    btn.textContent = 'Crear cuenta'; btn.disabled = false;
+    document.getElementById('reg-error').style.display = 'none';
+    switchAuthTab('login');
+    const ok = document.getElementById('login-error');
+    ok.textContent = '✓ Cuenta creada. Ya puedes iniciar sesión.';
+    ok.style.display = 'block';
+    ok.style.background = '#EAF3DE'; ok.style.color = '#1a6b42'; ok.style.borderColor = '#a8cca9';
+  } catch(e) {
+    showAuthError('reg-error', 'Error inesperado: ' + e.message);
+    btn.textContent = 'Crear cuenta'; btn.disabled = false;
+  }
 }
 
 async function cerrarSesion() {
