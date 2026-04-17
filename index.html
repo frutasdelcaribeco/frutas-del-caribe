@@ -169,17 +169,42 @@
     <div class="login-logo">🥭</div>
     <div class="login-title">Frutas del Caribe</div>
     <div class="login-sub">Inventario de especies del Caribe colombiano</div>
-    <input type="password" id="login-pass" placeholder="Contraseña de acceso" onkeydown="if(event.key==='Enter') verificarClave()"/>
-    <div class="login-error" id="login-error">Contraseña incorrecta. Inténtalo de nuevo.</div>
-    <button class="login-btn" onclick="verificarClave()">Entrar</button>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:0;margin-bottom:1.5rem;border-bottom:1px solid #e0e0e0;">
+      <button id="tab-login-btn" onclick="switchAuthTab('login')" style="flex:1;padding:8px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;color:#1a6b42;border-bottom:2px solid #1a6b42;">Iniciar sesión</button>
+      <button id="tab-register-btn" onclick="switchAuthTab('register')" style="flex:1;padding:8px;border:none;background:none;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;color:#999;border-bottom:2px solid transparent;">Registrarse</button>
+    </div>
+
+    <!-- Login form -->
+    <div id="form-login">
+      <input type="email" id="login-email" placeholder="Correo electrónico" style="margin-bottom:0.75rem;text-align:left;letter-spacing:0;"/>
+      <input type="password" id="login-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter') iniciarSesion()" style="text-align:left;letter-spacing:0;"/>
+      <div class="login-error" id="login-error"></div>
+      <button class="login-btn" onclick="iniciarSesion()">Entrar</button>
+    </div>
+
+    <!-- Register form -->
+    <div id="form-register" style="display:none;">
+      <input type="email" id="reg-email" placeholder="Correo electrónico" style="margin-bottom:0.75rem;text-align:left;letter-spacing:0;"/>
+      <input type="password" id="reg-password" placeholder="Contraseña (mínimo 6 caracteres)" style="margin-bottom:0.75rem;text-align:left;letter-spacing:0;"/>
+      <input type="text" id="reg-codigo" placeholder="Código de invitación" onkeydown="if(event.key==='Enter') registrarse()" style="text-align:center;letter-spacing:0.15em;text-transform:uppercase;"/>
+      <div class="login-error" id="reg-error"></div>
+      <button class="login-btn" onclick="registrarse()">Crear cuenta</button>
+    </div>
+
   </div>
 </div>
 
 <header>
   <div class="logo">🥭</div>
-  <div>
+  <div style="flex:1;">
     <h1>Frutas del Caribe</h1>
     <p>Inventario de especies del Caribe colombiano</p>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+    <span id="user-email-label" style="font-size:0.72rem;opacity:0.7;"></span>
+    <button onclick="cerrarSesion()" style="font-size:0.75rem;padding:4px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:transparent;color:white;cursor:pointer;font-family:'DM Sans',sans-serif;">Cerrar sesión</button>
   </div>
 </header>
 
@@ -187,6 +212,7 @@
   <button class="active" onclick="showTab('registrar', this)">Registrar miembro</button>
   <button onclick="showTab('catalogo', this)">Catálogo</button>
   <button onclick="showTab('estadisticas', this)">Estadísticas</button>
+  <button id="btn-admin-tab" onclick="showTab('admin', this)" style="display:none;">Admin</button>
 </nav>
 
 <main>
@@ -297,30 +323,144 @@
     </div>
   </div>
 
+  <!-- ADMIN -->
+  <div id="tab-admin" class="section">
+    <div class="card">
+      <div class="card-title">Generar código de invitación</div>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;">Genera un código de un solo uso para compartir con un nuevo miembro. El código expira en cuanto alguien lo usa para registrarse.</p>
+      <button class="btn btn-primary" onclick="generarCodigo()">Generar nuevo código</button>
+      <div id="codigo-generado" style="display:none;margin-top:1rem;padding:1rem;background:var(--green-faint);border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center;">
+        <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px;">Comparte este código con el nuevo miembro:</p>
+        <p id="codigo-valor" style="font-size:1.8rem;font-weight:600;color:var(--green-dark);letter-spacing:0.2em;font-family:'Fraunces',serif;"></p>
+        <button class="btn btn-outline" style="margin-top:8px;font-size:0.78rem;" onclick="copiarCodigo()">Copiar código</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Códigos disponibles</div>
+      <div id="lista-codigos"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+  </div>
+
 </main>
 
 <script>
 const SUPABASE_URL = 'https://nyyhmhgbomtntvklnyuy.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55eWhtaGdib210bnR2a2xueXV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NDU0MjIsImV4cCI6MjA5MjAyMTQyMn0.inDPLyqARUQ7AI8McRx4y8kHIJTBWrSLgW31eVWiBf0';
+const ADMIN_EMAIL = 'frutasdelcaribeco@gmail.com';
 
-// ── LOGIN ─────────────────────────────────────────
-const CLAVE = 'frutasdelcaribe2026';
+// ── AUTH ──────────────────────────────────────────
+function switchAuthTab(tab) {
+  document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('form-register').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('tab-login-btn').style.cssText = tab === 'login' ? 'flex:1;padding:8px;border:none;background:none;font-family:DM Sans,sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;color:#1a6b42;border-bottom:2px solid #1a6b42;' : 'flex:1;padding:8px;border:none;background:none;font-family:DM Sans,sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;color:#999;border-bottom:2px solid transparent;';
+  document.getElementById('tab-register-btn').style.cssText = tab === 'register' ? 'flex:1;padding:8px;border:none;background:none;font-family:DM Sans,sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;color:#1a6b42;border-bottom:2px solid #1a6b42;' : 'flex:1;padding:8px;border:none;background:none;font-family:DM Sans,sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;color:#999;border-bottom:2px solid transparent;';
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('reg-error').style.display = 'none';
+}
 
-function verificarClave() {
-  const val = document.getElementById('login-pass').value;
-  if (val === CLAVE) {
-    sessionStorage.setItem('fdc_auth', '1');
-    document.getElementById('login-screen').classList.add('hidden');
-  } else {
-    document.getElementById('login-error').style.display = 'block';
-    document.getElementById('login-pass').value = '';
-    document.getElementById('login-pass').focus();
+function showAuthError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display = 'block';
+}
+
+async function iniciarSesion() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) { showAuthError('login-error', 'Completa todos los campos.'); return; }
+  const btn = document.querySelector('#form-login .login-btn');
+  btn.textContent = 'Entrando...'; btn.disabled = true;
+  const { error } = await db.auth.signInWithPassword({ email, password });
+  btn.textContent = 'Entrar'; btn.disabled = false;
+  if (error) { showAuthError('login-error', 'Correo o contraseña incorrectos.'); return; }
+}
+
+async function registrarse() {
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const codigo = document.getElementById('reg-codigo').value.trim().toUpperCase();
+  if (!email || !password || !codigo) { showAuthError('reg-error', 'Completa todos los campos.'); return; }
+  if (password.length < 6) { showAuthError('reg-error', 'La contraseña debe tener al menos 6 caracteres.'); return; }
+
+  const btn = document.querySelector('#form-register .login-btn');
+  btn.textContent = 'Verificando...'; btn.disabled = true;
+
+  const { data: codigos } = await db.from('codigos_invitacion').select('*').eq('codigo', codigo).eq('usado', false);
+  if (!codigos || codigos.length === 0) {
+    showAuthError('reg-error', 'Código de invitación inválido o ya utilizado.');
+    btn.textContent = 'Crear cuenta'; btn.disabled = false; return;
   }
+
+  const { error } = await db.auth.signUp({ email, password });
+  if (error) {
+    showAuthError('reg-error', error.message);
+    btn.textContent = 'Crear cuenta'; btn.disabled = false; return;
+  }
+
+  await db.from('codigos_invitacion').update({ usado: true }).eq('codigo', codigo);
+  btn.textContent = 'Crear cuenta'; btn.disabled = false;
+  showAuthError('reg-error', '');
+  document.getElementById('reg-error').style.display = 'none';
+  switchAuthTab('login');
+  const ok = document.getElementById('login-error');
+  ok.textContent = '✓ Cuenta creada. Ya puedes iniciar sesión.';
+  ok.style.display = 'block';
+  ok.style.background = '#EAF3DE'; ok.style.color = '#1a6b42'; ok.style.borderColor = '#a8cca9';
 }
 
-if (sessionStorage.getItem('fdc_auth') === '1') {
-  document.getElementById('login-screen').classList.add('hidden');
+async function cerrarSesion() {
+  await db.auth.signOut();
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-password').value = '';
 }
+
+// ── ADMIN ─────────────────────────────────────────
+function generarCodigo() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const codigo = Array.from({length: 8}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  db.from('codigos_invitacion').insert({ codigo }).then(({ error }) => {
+    if (error) { alert('Error al guardar el código: ' + error.message); return; }
+    document.getElementById('codigo-valor').textContent = codigo;
+    document.getElementById('codigo-generado').style.display = 'block';
+    cargarListaCodigos();
+  });
+}
+
+function copiarCodigo() {
+  const codigo = document.getElementById('codigo-valor').textContent;
+  navigator.clipboard.writeText(codigo).then(() => alert('Código copiado: ' + codigo));
+}
+
+async function cargarListaCodigos() {
+  const { data } = await db.from('codigos_invitacion').select('*').eq('usado', false).order('created_at', { ascending: false });
+  const el = document.getElementById('lista-codigos');
+  if (!data || !data.length) { el.innerHTML = '<p style="font-size:0.85rem;color:var(--text-muted);text-align:center;padding:1rem;">No hay códigos disponibles.</p>'; return; }
+  el.innerHTML = data.map(c => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--green-faint);font-size:0.85rem;">
+      <span style="font-family:'Fraunces',serif;letter-spacing:0.1em;color:var(--green-dark);font-weight:600;">${c.codigo}</span>
+      <button class="btn btn-sm btn-danger" onclick="eliminarCodigo('${c.id}')">Eliminar</button>
+    </div>
+  `).join('');
+}
+
+async function eliminarCodigo(id) {
+  await db.from('codigos_invitacion').delete().eq('id', id);
+  cargarListaCodigos();
+}
+
+// ── INIT AUTH ─────────────────────────────────────
+db.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('user-email-label').textContent = session.user.email;
+    if (session.user.email === ADMIN_EMAIL) {
+      document.getElementById('btn-admin-tab').style.display = 'inline-block';
+    }
+  } else {
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('btn-admin-tab').style.display = 'none';
+  }
+});
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -336,6 +476,7 @@ function showTab(tab, el) {
   el.classList.add('active');
   if (tab === 'catalogo') cargarYRenderCatalogo();
   if (tab === 'estadisticas') cargarYRenderStats();
+  if (tab === 'admin') cargarListaCodigos();
 }
 
 // ── SPECIES ENTRIES ───────────────────────────────
