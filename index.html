@@ -170,8 +170,48 @@
 
   <!-- REGISTRAR -->
   <div id="tab-registrar" class="section active">
+
+    <!-- Buscar miembro existente -->
     <div class="card">
-      <div class="card-title">Datos del miembro</div>
+      <div class="card-title">Agregar especies a miembro existente</div>
+      <div style="display:flex;gap:10px;align-items:flex-end;">
+        <div class="form-group" style="flex:1;margin-bottom:0;">
+          <label>Buscar miembro por nombre</label>
+          <div class="autocomplete-wrap">
+            <input type="text" id="inp-buscar-miembro" placeholder="Escribe el nombre del miembro..." autocomplete="off"
+              oninput="buscarMiembroExistente(this.value)"
+              onblur="setTimeout(()=>cerrarDropMiembro(), 150)"/>
+            <div class="autocomplete-list" id="drop-miembros" style="display:none;"></div>
+          </div>
+        </div>
+        <button class="btn btn-add" onclick="mostrarFormEspecies()" id="btn-agregar-esp" style="display:none;">+ Agregar especies</button>
+      </div>
+      <div id="miembro-seleccionado" style="display:none;margin-top:12px;padding:10px 14px;background:var(--green-faint);border-radius:var(--radius-sm);border:1px solid var(--border);">
+        <p style="font-size:0.85rem;font-weight:500;color:var(--green-dark);" id="miembro-sel-nombre"></p>
+        <p style="font-size:0.78rem;color:var(--text-muted);" id="miembro-sel-info"></p>
+      </div>
+      <div id="form-especies-existente" style="display:none;margin-top:12px;">
+        <div class="section-bar">
+          <p style="font-size:0.85rem;font-weight:500;color:var(--text-muted);">Nuevas especies</p>
+          <button class="btn btn-add" onclick="addSpeciesEntryExistente()">+ Agregar especie</button>
+        </div>
+        <div id="species-list-existente"></div>
+        <div id="alert-existente" style="display:none;" class="alert"></div>
+        <div class="actions">
+          <button class="btn btn-outline" onclick="cancelarAgregarEspecies()">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarEspeciesExistente()">Guardar especies</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin:0.5rem 0;">
+      <hr style="flex:1;border:none;border-top:1px solid var(--border);"/>
+      <span style="font-size:0.8rem;color:var(--text-muted);">o registra un miembro nuevo</span>
+      <hr style="flex:1;border:none;border-top:1px solid var(--border);"/>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Nuevo miembro</div>
       <div class="form-grid">
         <div class="form-group"><label>Nombre completo *</label><input type="text" id="inp-nombre" placeholder="Ej: María López"/></div>
         <div class="form-group"><label>Nombre del proyecto</label><input type="text" id="inp-proyecto" placeholder="Ej: Finca La Esperanza"/></div>
@@ -668,7 +708,180 @@ function exportarExcel() {
   XLSX.writeFile(wb, 'Registro_Especies_Asociacion.xlsx');
 }
 
-// ── MUNICIPIOS DE COLOMBIA ────────────────────────
+// ── AGREGAR ESPECIES A MIEMBRO EXISTENTE ─────────
+let miembroSeleccionadoId = null;
+let tempSpeciesExistente = [];
+let tempPhotosExistente = {};
+
+async function buscarMiembroExistente(val) {
+  const drop = document.getElementById('drop-miembros');
+  if (!val.trim()) { drop.style.display = 'none'; return; }
+  const { data } = await db.from('miembros').select('id, nombre, proyecto, region').ilike('nombre', `%${val}%`).limit(8);
+  if (!data || !data.length) { drop.style.display = 'none'; return; }
+  drop.innerHTML = data.map(m => `
+    <div class="autocomplete-item" onmousedown="seleccionarMiembro('${m.id}', '${m.nombre.replace(/'/g,"\\'")}', '${(m.proyecto||'').replace(/'/g,"\\'")}', '${(m.region||'').replace(/'/g,"\\'")}')">
+      <span>${m.nombre}</span>
+      <span class="sci">${m.proyecto || m.region || ''}</span>
+    </div>
+  `).join('');
+  drop.style.display = 'block';
+}
+
+function seleccionarMiembro(id, nombre, proyecto, region) {
+  miembroSeleccionadoId = id;
+  document.getElementById('inp-buscar-miembro').value = nombre;
+  document.getElementById('drop-miembros').style.display = 'none';
+  document.getElementById('miembro-sel-nombre').textContent = nombre;
+  document.getElementById('miembro-sel-info').textContent = [proyecto, region].filter(Boolean).join(' · ');
+  document.getElementById('miembro-seleccionado').style.display = 'block';
+  document.getElementById('btn-agregar-esp').style.display = 'inline-block';
+}
+
+function cerrarDropMiembro() {
+  document.getElementById('drop-miembros').style.display = 'none';
+}
+
+function mostrarFormEspecies() {
+  tempSpeciesExistente = [];
+  tempPhotosExistente = {};
+  document.getElementById('form-especies-existente').style.display = 'block';
+  document.getElementById('btn-agregar-esp').style.display = 'none';
+  addSpeciesEntryExistente();
+}
+
+function cancelarAgregarEspecies() {
+  document.getElementById('form-especies-existente').style.display = 'none';
+  document.getElementById('btn-agregar-esp').style.display = 'inline-block';
+  tempSpeciesExistente = [];
+  tempPhotosExistente = {};
+}
+
+function addSpeciesEntryExistente() {
+  tempSpeciesExistente.push({ comun: '', cientifico: '', foto: null });
+  renderSpeciesEntriesExistente();
+}
+
+function removeSpeciesEntryExistente(idx) {
+  tempSpeciesExistente.splice(idx, 1);
+  const nm = {};
+  Object.keys(tempPhotosExistente).forEach(k => {
+    const ki = parseInt(k);
+    if (ki !== idx) nm[ki > idx ? ki - 1 : ki] = tempPhotosExistente[k];
+  });
+  tempPhotosExistente = nm;
+  renderSpeciesEntriesExistente();
+}
+
+function renderSpeciesEntriesExistente() {
+  const c = document.getElementById('species-list-existente');
+  if (!tempSpeciesExistente.length) { c.innerHTML = ''; return; }
+  c.innerHTML = tempSpeciesExistente.map((f, i) => `
+    <div class="species-entry">
+      <div class="species-entry-header">
+        <span>Especie ${i + 1}</span>
+        <button class="btn btn-ghost btn-sm" onclick="removeSpeciesEntryExistente(${i})">✕ Eliminar</button>
+      </div>
+      <div class="species-grid">
+        <div class="form-group">
+          <label>Nombre común *</label>
+          <div class="autocomplete-wrap">
+            <input type="text" id="ecomun-${i}" value="${f.comun}" placeholder="Escribe el nombre o busca en la lista..." autocomplete="off"
+              oninput="tempSpeciesExistente[${i}].comun=this.value; onEComunInput(${i}, this.value)"
+              onkeydown="onEComunKey(event, ${i})"
+              onblur="setTimeout(()=>closeEDropdown(${i}), 150)"/>
+            <div class="autocomplete-list" id="edrop-${i}" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Nombre científico</label>
+          <input type="text" id="ecient-${i}" value="${f.cientifico}" placeholder="Ej: Mangifera indica" style="font-style:italic"
+            oninput="tempSpeciesExistente[${i}].cientifico=this.value"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Foto</label>
+        ${tempPhotosExistente[i]
+          ? `<img src="${tempPhotosExistente[i]}" class="photo-preview"/><button class="btn btn-ghost btn-sm" style="margin-top:4px;" onclick="clearEPhoto(${i})">✕ Quitar foto</button>`
+          : `<div class="photo-upload"><input type="file" accept="image/*" onchange="handleEPhoto(event,${i})"/>Toca para subir foto</div>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+function onEComunInput(idx, val) {
+  const drop = document.getElementById('edrop-' + idx);
+  if (!val.trim()) { drop.style.display = 'none'; return; }
+  const matches = CATALOGO_FRUTAS.filter(f => f.comun.toLowerCase().includes(val.toLowerCase())).slice(0, 8);
+  if (!matches.length) { drop.style.display = 'none'; return; }
+  drop.innerHTML = matches.map(f => `
+    <div class="autocomplete-item" onmousedown="selectEFruta(${idx}, '${f.comun.replace(/'/g,"\\'")}', '${f.cientifico.replace(/'/g,"\\'")}')">
+      <span>${f.comun}</span><span class="sci">${f.cientifico}</span>
+    </div>
+  `).join('');
+  drop.style.display = 'block';
+}
+
+function onEComunKey(e, idx) {
+  const drop = document.getElementById('edrop-' + idx);
+  const items = drop.querySelectorAll('.autocomplete-item');
+  if (!items.length) return;
+  if (e.key === 'Enter') { e.preventDefault(); if (items[0]) items[0].dispatchEvent(new MouseEvent('mousedown')); }
+  else if (e.key === 'Escape') closeEDropdown(idx);
+}
+
+function selectEFruta(idx, comun, cientifico) {
+  tempSpeciesExistente[idx].comun = comun;
+  tempSpeciesExistente[idx].cientifico = cientifico;
+  const ci = document.getElementById('ecomun-' + idx);
+  const sc = document.getElementById('ecient-' + idx);
+  if (ci) ci.value = comun;
+  if (sc) { sc.value = cientifico; sc.style.fontStyle = 'italic'; }
+  closeEDropdown(idx);
+}
+
+function closeEDropdown(idx) {
+  const drop = document.getElementById('edrop-' + idx);
+  if (drop) drop.style.display = 'none';
+}
+
+function handleEPhoto(e, idx) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => { tempPhotosExistente[idx] = ev.target.result; tempSpeciesExistente[idx].foto = ev.target.result; renderSpeciesEntriesExistente(); };
+  r.readAsDataURL(file);
+}
+
+function clearEPhoto(idx) { delete tempPhotosExistente[idx]; tempSpeciesExistente[idx].foto = null; renderSpeciesEntriesExistente(); }
+
+async function guardarEspeciesExistente() {
+  if (!miembroSeleccionadoId) { showAlert('existente', 'No hay miembro seleccionado.', 'err'); return; }
+  if (!tempSpeciesExistente.length) { showAlert('existente', 'Agrega al menos una especie.', 'err'); return; }
+  if (tempSpeciesExistente.find(f => !f.comun.trim())) { showAlert('existente', 'Completa el nombre común de todas las especies.', 'err'); return; }
+
+  const btn = document.querySelector('#form-especies-existente .btn-primary');
+  btn.textContent = 'Guardando...'; btn.disabled = true;
+
+  try {
+    const especiesData = tempSpeciesExistente.map(f => ({
+      miembro_id: miembroSeleccionadoId,
+      nombre_comun: f.comun,
+      nombre_cientifico: f.cientifico || null,
+      foto_url: f.foto || null
+    }));
+    const { error } = await db.from('especies').insert(especiesData);
+    if (error) throw error;
+    showAlert('existente', `✓ ${tempSpeciesExistente.length} especie(s) agregadas correctamente.`, 'ok');
+    cancelarAgregarEspecies();
+    document.getElementById('inp-buscar-miembro').value = '';
+    document.getElementById('miembro-seleccionado').style.display = 'none';
+    document.getElementById('btn-agregar-esp').style.display = 'none';
+    miembroSeleccionadoId = null;
+  } catch (err) {
+    showAlert('existente', 'Error al guardar: ' + err.message, 'err');
+  } finally {
+    btn.textContent = 'Guardar especies'; btn.disabled = false;
+  }
+}
 const MUNICIPIOS = {
   'Amazonas': ['Leticia','El Encanto','La Chorrera','La Pedrera','La Victoria','Mirití-Paraná','Puerto Alegría','Puerto Arica','Puerto Nariño','Puerto Santander','Tarapacá'],
   'Antioquia': ['Medellín','Abejorral','Abriaquí','Alejandría','Amagá','Amalfi','Andes','Angelópolis','Angostura','Anorí','Anzá','Apartadó','Arboletes','Argelia','Armenia','Barbosa','Bello','Betania','Betulia','Briceño','Buriticá','Cáceres','Caicedo','Caldas','Campamento','Cañasgordas','Caracolí','Caramanta','Carepa','Carolina del Príncipe','Caucasia','Chigorodó','Cisneros','Cocorná','Concepción','Concordia','Copacabana','Dabeiba','Don Matías','Ebéjico','El Bagre','El Carmen de Viboral','El Santuario','Entrerríos','Envigado','Fredonia','Frontino','Giraldo','Girardota','Gómez Plata','Granada','Guadalupe','Guarne','Guatapé','Heliconia','Hispania','Itagüí','Ituango','Jardín','Jericó','La Ceja','La Estrella','La Pintada','La Unión','Liborina','Maceo','Marinilla','Montebello','Murindó','Mutatá','Nariño','Nechí','Necoclí','Olaya','Peñol','Peque','Pueblorrico','Puerto Berrío','Puerto Nare','Puerto Triunfo','Remedios','Retiro','Rionegro','Sabanalarga','Sabaneta','Salgar','San Andrés de Cuerquia','San Carlos','San Francisco','San Jerónimo','San José de la Montaña','San Juan de Urabá','San Luis','San Pedro','San Pedro de Urabá','San Rafael','San Roque','San Vicente','Santa Bárbara','Santa Rosa de Osos','Santo Domingo','Segovia','Sonsón','Sopetrán','Tarazá','Tarso','Titiribí','Toledo','Turbo','Uramita','Urrao','Valdivia','Valparaíso','Vegachí','Venecia','Vigía del Fuerte','Yalí','Yarumal','Yolombó','Yondó','Zaragoza'],
