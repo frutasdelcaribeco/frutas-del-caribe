@@ -573,13 +573,22 @@ function renderSpeciesEntries() {
       </div>
       <div class="form-group">
         <label>Método de propagación</label>
-        <select id="propag-${i}" onchange="tempSpecies[${i}].propagacion=this.value">
+        <select id="propag-${i}" onchange="tempSpecies[${i}].propagacion=this.value; document.getElementById('propag-otro-${i}').style.display=this.value==='Otro'?'block':'none'; if(this.value!=='Otro') tempSpecies[${i}].propagacion=this.value;">
           <option value="">— Selecciona un método —</option>
           <option value="Semilla" ${f.propagacion==='Semilla'?'selected':''}>Semilla</option>
           <option value="Injerto" ${f.propagacion==='Injerto'?'selected':''}>Injerto</option>
           <option value="Acodo" ${f.propagacion==='Acodo'?'selected':''}>Acodo</option>
+          <option value="Acodo aéreo" ${f.propagacion==='Acodo aéreo'?'selected':''}>Acodo aéreo</option>
+          <option value="Estaca" ${f.propagacion==='Estaca'?'selected':''}>Estaca</option>
+          <option value="Esqueje" ${f.propagacion==='Esqueje'?'selected':''}>Esqueje</option>
+          <option value="Colino" ${f.propagacion==='Colino'?'selected':''}>Colino</option>
+          <option value="Hijuelo" ${f.propagacion==='Hijuelo'?'selected':''}>Hijuelo</option>
+          <option value="Rizoma" ${f.propagacion==='Rizoma'?'selected':''}>Rizoma</option>
+          <option value="Bulbo" ${f.propagacion==='Bulbo'?'selected':''}>Bulbo</option>
+          <option value="Otro" ${f.propagacion && !['Semilla','Injerto','Acodo','Acodo aéreo','Estaca','Esqueje','Colino','Hijuelo','Rizoma','Bulbo','Desconocido'].includes(f.propagacion)?'selected':''}>Otro ¿cuál?</option>
           <option value="Desconocido" ${f.propagacion==='Desconocido'?'selected':''}>Desconocido</option>
         </select>
+        <input type="text" id="propag-otro-${i}" placeholder="Especifica el método..." style="display:${f.propagacion && !['Semilla','Injerto','Acodo','Acodo aéreo','Estaca','Esqueje','Colino','Hijuelo','Rizoma','Bulbo','Desconocido'].includes(f.propagacion)?'block':'none'};margin-top:6px;" value="${f.propagacion && !['Semilla','Injerto','Acodo','Acodo aéreo','Estaca','Esqueje','Colino','Hijuelo','Rizoma','Bulbo','Desconocido'].includes(f.propagacion)?f.propagacion:''}" oninput="tempSpecies[${i}].propagacion=this.value"/>
       </div>
       <div class="form-group">
         <label>Etapa fenológica</label>
@@ -1778,13 +1787,22 @@ function renderSpeciesEntriesExistente() {
       </div>
       <div class="form-group">
         <label>Método de propagación</label>
-        <select id="epropag-${i}" onchange="tempSpeciesExistente[${i}].propagacion=this.value">
+        <select id="epropag-${i}" onchange="tempSpeciesExistente[${i}].propagacion=this.value; document.getElementById('epropag-otro-${i}').style.display=this.value==='Otro'?'block':'none';">
           <option value="">— Selecciona un método —</option>
           <option value="Semilla">Semilla</option>
           <option value="Injerto">Injerto</option>
           <option value="Acodo">Acodo</option>
+          <option value="Acodo aéreo">Acodo aéreo</option>
+          <option value="Estaca">Estaca</option>
+          <option value="Esqueje">Esqueje</option>
+          <option value="Colino">Colino</option>
+          <option value="Hijuelo">Hijuelo</option>
+          <option value="Rizoma">Rizoma</option>
+          <option value="Bulbo">Bulbo</option>
+          <option value="Otro">Otro ¿cuál?</option>
           <option value="Desconocido">Desconocido</option>
         </select>
+        <input type="text" id="epropag-otro-${i}" placeholder="Especifica el método..." style="display:none;margin-top:6px;" oninput="tempSpeciesExistente[${i}].propagacion=this.value"/>
       </div>
       <div class="form-group">
         <label>Etapa fenológica</label>
