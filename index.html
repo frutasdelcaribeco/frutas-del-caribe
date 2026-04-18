@@ -262,6 +262,7 @@
         <div id="alert-existente" style="display:none;" class="alert"></div>
         <div class="actions">
           <button class="btn btn-outline" onclick="cancelarAgregarEspecies()">Cancelar</button>
+          <button class="btn btn-add" onclick="addSpeciesEntryExistente()">+ Agregar especie</button>
           <button class="btn btn-primary" onclick="guardarEspeciesExistente()">Guardar especies</button>
         </div>
       </div>
@@ -311,6 +312,7 @@
       <div id="alert-reg" style="display:none;" class="alert"></div>
       <div class="actions">
         <button class="btn btn-outline" onclick="resetForm()">Limpiar</button>
+        <button class="btn btn-add" onclick="addSpeciesEntry()">+ Agregar especie</button>
         <button class="btn btn-primary" onclick="guardarMiembro()">Guardar miembro</button>
       </div>
     </div>
@@ -570,6 +572,23 @@ function renderSpeciesEntries() {
         </div>
       </div>
       <div class="form-group">
+        <label>Etapa fenológica</label>
+        <select id="etapa-${i}" onchange="tempSpecies[${i}].etapa=this.value; document.getElementById('etapa-desc-${i}').innerHTML=etapaDescripcion(this.value)||'Selecciona una etapa para ver su descripción.'" style="margin-bottom:4px;">
+          <option value="">— Selecciona una etapa —</option>
+          <option value="Plántula" ${f.etapa==='Plántula'?'selected':''}>Plántula</option>
+          <option value="Vegetativa" ${f.etapa==='Vegetativa'?'selected':''}>Vegetativa</option>
+          <option value="En flor" ${f.etapa==='En flor'?'selected':''}>En flor</option>
+          <option value="Floración estéril" ${f.etapa==='Floración estéril'?'selected':''}>Floración estéril</option>
+          <option value="Vaneando" ${f.etapa==='Vaneando'?'selected':''}>Vaneando</option>
+          <option value="Fructificando" ${f.etapa==='Fructificando'?'selected':''}>Fructificando</option>
+          <option value="Enferma" ${f.etapa==='Enferma'?'selected':''}>Enferma</option>
+          <option value="Muerta" ${f.etapa==='Muerta'?'selected':''}>Muerta</option>
+        </select>
+        <div style="font-size:0.75rem;color:var(--text-muted);padding:6px 10px;background:var(--green-faint);border-radius:var(--radius-sm);line-height:1.5;" id="etapa-desc-${i}">
+          ${f.etapa ? etapaDescripcion(f.etapa) : 'Selecciona una etapa para ver su descripción.'}
+        </div>
+      </div>
+      <div class="form-group">
         <label>Foto de la especie</label>
         ${tempPhotos[i]
           ? `<img src="${tempPhotos[i]}" class="photo-preview"/><button class="btn btn-ghost btn-sm" style="margin-top:4px;" onclick="clearPhoto(${i})">✕ Quitar foto</button>`
@@ -577,6 +596,20 @@ function renderSpeciesEntries() {
       </div>
     </div>
   `).join('');
+}
+
+function etapaDescripcion(etapa) {
+  const desc = {
+    'Plántula': 'Planta recién germinada o trasplantada. Está en sus primeras etapas de desarrollo y aún no ha florecido.',
+    'Vegetativa': 'La planta crece activamente desarrollando hojas y ramas, pero aún no ha florecido ni producido frutos.',
+    'En flor': 'La planta tiene flores activas actualmente. Etapa clave que anticipa la posible producción de frutos.',
+    'Floración estéril': 'La planta florece repetidamente pero no logra cuajar fruto. Puede deberse a falta de polinizadores o condiciones inadecuadas.',
+    'Vaneando': 'Se forman frutos pero quedan vacíos, sin semilla desarrollada, o abortan antes de madurar.',
+    'Fructificando': 'La planta produce frutos completos y sanos en desarrollo o maduración.',
+    'Enferma': 'La planta presenta síntomas fitosanitarios como plagas, hongos u otras afecciones que afectan su desarrollo.',
+    'Muerta': 'La planta ya no existe. El registro se mantiene como referencia histórica.'
+  };
+  return desc[etapa] || '';
 }
 
 // ── AUTOCOMPLETE LOGIC ────────────────────────────
@@ -1329,6 +1362,7 @@ async function guardarMiembro() {
       nombre_comun: f.comun,
       nombre_cientifico: f.cientifico || null,
       foto_url: f.foto || null,
+      etapa_fenologica: f.etapa || null,
       user_id: user.id
     }));
 
@@ -1411,6 +1445,7 @@ async function renderCatalogo() {
             <div style="flex:1;">
               <div class="species-common">${e.nombre_comun}</div>
               ${e.nombre_cientifico ? `<div class="species-sci">${e.nombre_cientifico}</div>` : ''}
+              ${e.etapa_fenologica ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:var(--green-pale);color:var(--green-dark);border-radius:20px;padding:1px 8px;font-weight:500;">${e.etapa_fenologica}</span></div>` : ''}
             </div>
             ${e.user_id === uid ? `<button class="btn btn-sm btn-danger" onclick="eliminarEspecie('${e.id}', '${m.id}')">✕</button>` : ''}
           </div>
@@ -1488,6 +1523,7 @@ function exportarExcel() {
         'Notas': i === 0 ? (m.notas || '') : '',
         'Nombre común': e.nombre_comun,
         'Nombre científico': e.nombre_cientifico || '',
+        'Etapa fenológica': e.etapa_fenologica || '',
         'Tiene foto': e.foto_url ? 'Sí' : 'No'
       });
     });
@@ -1597,6 +1633,21 @@ function renderSpeciesEntriesExistente() {
         </div>
       </div>
       <div class="form-group">
+        <label>Etapa fenológica</label>
+        <select id="eetapa-${i}" onchange="tempSpeciesExistente[${i}].etapa=this.value; document.getElementById('eetapa-desc-${i}').innerHTML=etapaDescripcion(this.value)||'Selecciona una etapa para ver su descripción.'" style="margin-bottom:4px;">
+          <option value="">— Selecciona una etapa —</option>
+          <option value="Plántula">Plántula</option>
+          <option value="Vegetativa">Vegetativa</option>
+          <option value="En flor">En flor</option>
+          <option value="Floración estéril">Floración estéril</option>
+          <option value="Vaneando">Vaneando</option>
+          <option value="Fructificando">Fructificando</option>
+          <option value="Enferma">Enferma</option>
+          <option value="Muerta">Muerta</option>
+        </select>
+        <div style="font-size:0.75rem;color:var(--text-muted);padding:6px 10px;background:var(--green-faint);border-radius:var(--radius-sm);line-height:1.5;" id="eetapa-desc-${i}">Selecciona una etapa para ver su descripción.</div>
+      </div>
+      <div class="form-group">
         <label>Foto</label>
         ${tempPhotosExistente[i]
           ? `<img src="${tempPhotosExistente[i]}" class="photo-preview"/><button class="btn btn-ghost btn-sm" style="margin-top:4px;" onclick="clearEPhoto(${i})">✕ Quitar foto</button>`
@@ -1667,6 +1718,7 @@ async function guardarEspeciesExistente() {
       nombre_comun: f.comun,
       nombre_cientifico: f.cientifico || null,
       foto_url: f.foto || null,
+      etapa_fenologica: f.etapa || null,
       user_id: user.id
     }));
     const { error } = await db.from('especies').insert(especiesData);
