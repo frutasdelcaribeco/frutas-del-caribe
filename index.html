@@ -572,6 +572,16 @@ function renderSpeciesEntries() {
         </div>
       </div>
       <div class="form-group">
+        <label>Método de propagación</label>
+        <select id="propag-${i}" onchange="tempSpecies[${i}].propagacion=this.value">
+          <option value="">— Selecciona un método —</option>
+          <option value="Semilla" ${f.propagacion==='Semilla'?'selected':''}>Semilla</option>
+          <option value="Injerto" ${f.propagacion==='Injerto'?'selected':''}>Injerto</option>
+          <option value="Acodo" ${f.propagacion==='Acodo'?'selected':''}>Acodo</option>
+          <option value="Desconocido" ${f.propagacion==='Desconocido'?'selected':''}>Desconocido</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label>Etapa fenológica</label>
         <select id="etapa-${i}" onchange="tempSpecies[${i}].etapa=this.value; document.getElementById('etapa-desc-${i}').innerHTML=etapaDescripcion(this.value)||'Selecciona una etapa para ver su descripción.'" style="margin-bottom:4px;">
           <option value="">— Selecciona una etapa —</option>
@@ -1494,6 +1504,7 @@ async function guardarMiembro() {
       nombre_cientifico: f.cientifico || null,
       foto_url: f.foto || null,
       etapa_fenologica: f.etapa || null,
+      metodo_propagacion: f.propagacion || null,
       user_id: user.id
     }));
 
@@ -1577,6 +1588,7 @@ async function renderCatalogo() {
               <div class="species-common">${e.nombre_comun}</div>
               ${e.nombre_cientifico ? `<div class="species-sci">${e.nombre_cientifico}</div>` : ''}
               ${e.etapa_fenologica ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:var(--green-pale);color:var(--green-dark);border-radius:20px;padding:1px 8px;font-weight:500;">${e.etapa_fenologica}</span></div>` : ''}
+              ${e.metodo_propagacion ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:var(--amber-light);color:var(--amber);border-radius:20px;padding:1px 8px;font-weight:500;">${e.metodo_propagacion}</span></div>` : ''}
             </div>
             ${e.user_id === uid ? `<button class="btn btn-sm btn-danger" onclick="eliminarEspecie('${e.id}', '${m.id}')">✕</button>` : ''}
           </div>
@@ -1655,6 +1667,7 @@ function exportarExcel() {
         'Nombre común': e.nombre_comun,
         'Nombre científico': e.nombre_cientifico || '',
         'Etapa fenológica': e.etapa_fenologica || '',
+        'Método de propagación': e.metodo_propagacion || '',
         'Tiene foto': e.foto_url ? 'Sí' : 'No'
       });
     });
@@ -1764,6 +1777,16 @@ function renderSpeciesEntriesExistente() {
         </div>
       </div>
       <div class="form-group">
+        <label>Método de propagación</label>
+        <select id="epropag-${i}" onchange="tempSpeciesExistente[${i}].propagacion=this.value">
+          <option value="">— Selecciona un método —</option>
+          <option value="Semilla">Semilla</option>
+          <option value="Injerto">Injerto</option>
+          <option value="Acodo">Acodo</option>
+          <option value="Desconocido">Desconocido</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label>Etapa fenológica</label>
         <select id="eetapa-${i}" onchange="tempSpeciesExistente[${i}].etapa=this.value; document.getElementById('eetapa-desc-${i}').innerHTML=etapaDescripcion(this.value)||'Selecciona una etapa para ver su descripción.'" style="margin-bottom:4px;">
           <option value="">— Selecciona una etapa —</option>
@@ -1850,6 +1873,7 @@ async function guardarEspeciesExistente() {
       nombre_cientifico: f.cientifico || null,
       foto_url: f.foto || null,
       etapa_fenologica: f.etapa || null,
+      metodo_propagacion: f.propagacion || null,
       user_id: user.id
     }));
     const { error } = await db.from('especies').insert(especiesData);
