@@ -575,14 +575,14 @@ function renderSpeciesEntries() {
         <label>Etapa fenológica</label>
         <select id="etapa-${i}" onchange="tempSpecies[${i}].etapa=this.value; document.getElementById('etapa-desc-${i}').innerHTML=etapaDescripcion(this.value)||'Selecciona una etapa para ver su descripción.'" style="margin-bottom:4px;">
           <option value="">— Selecciona una etapa —</option>
-          <option value="Plántula" ${f.etapa==='Plántula'?'selected':''}>Plántula</option>
-          <option value="Vegetativa" ${f.etapa==='Vegetativa'?'selected':''}>Vegetativa</option>
-          <option value="En flor" ${f.etapa==='En flor'?'selected':''}>En flor</option>
-          <option value="Floración estéril" ${f.etapa==='Floración estéril'?'selected':''}>Floración estéril</option>
-          <option value="Vaneando" ${f.etapa==='Vaneando'?'selected':''}>Vaneando</option>
-          <option value="Fructificando" ${f.etapa==='Fructificando'?'selected':''}>Fructificando</option>
-          <option value="Enferma" ${f.etapa==='Enferma'?'selected':''}>Enferma</option>
-          <option value="Muerta" ${f.etapa==='Muerta'?'selected':''}>Muerta</option>
+          <option value="Plántula" ${f.etapa==='Plántula'?'selected':''}>Plántula — recién germinada o trasplantada</option>
+          <option value="Vegetativa" ${f.etapa==='Vegetativa'?'selected':''}>Vegetativa — crecimiento activo sin flores</option>
+          <option value="En flor" ${f.etapa==='En flor'?'selected':''}>En flor — con flores activas</option>
+          <option value="Floración estéril" ${f.etapa==='Floración estéril'?'selected':''}>Floración estéril — florece sin cuajar fruto</option>
+          <option value="Vaneando" ${f.etapa==='Vaneando'?'selected':''}>Vaneando — frutos vacíos o que abortan</option>
+          <option value="Fructificando" ${f.etapa==='Fructificando'?'selected':''}>Fructificando — produce frutos completos y sanos</option>
+          <option value="Enferma" ${f.etapa==='Enferma'?'selected':''}>Enferma — presenta problemas fitosanitarios</option>
+          <option value="Muerta" ${f.etapa==='Muerta'?'selected':''}>Muerta — planta ya no existe, registro histórico</option>
         </select>
         <div style="font-size:0.75rem;color:var(--text-muted);padding:6px 10px;background:var(--green-faint);border-radius:var(--radius-sm);line-height:1.5;" id="etapa-desc-${i}">
           ${f.etapa ? etapaDescripcion(f.etapa) : 'Selecciona una etapa para ver su descripción.'}
@@ -1636,14 +1636,14 @@ function renderSpeciesEntriesExistente() {
         <label>Etapa fenológica</label>
         <select id="eetapa-${i}" onchange="tempSpeciesExistente[${i}].etapa=this.value; document.getElementById('eetapa-desc-${i}').innerHTML=etapaDescripcion(this.value)||'Selecciona una etapa para ver su descripción.'" style="margin-bottom:4px;">
           <option value="">— Selecciona una etapa —</option>
-          <option value="Plántula">Plántula</option>
-          <option value="Vegetativa">Vegetativa</option>
-          <option value="En flor">En flor</option>
-          <option value="Floración estéril">Floración estéril</option>
-          <option value="Vaneando">Vaneando</option>
-          <option value="Fructificando">Fructificando</option>
-          <option value="Enferma">Enferma</option>
-          <option value="Muerta">Muerta</option>
+          <option value="Plántula">Plántula — recién germinada o trasplantada</option>
+          <option value="Vegetativa">Vegetativa — crecimiento activo sin flores</option>
+          <option value="En flor">En flor — con flores activas</option>
+          <option value="Floración estéril">Floración estéril — florece sin cuajar fruto</option>
+          <option value="Vaneando">Vaneando — frutos vacíos o que abortan</option>
+          <option value="Fructificando">Fructificando — produce frutos completos y sanos</option>
+          <option value="Enferma">Enferma — presenta problemas fitosanitarios</option>
+          <option value="Muerta">Muerta — planta ya no existe, registro histórico</option>
         </select>
         <div style="font-size:0.75rem;color:var(--text-muted);padding:6px 10px;background:var(--green-faint);border-radius:var(--radius-sm);line-height:1.5;" id="eetapa-desc-${i}">Selecciona una etapa para ver su descripción.</div>
       </div>
