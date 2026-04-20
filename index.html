@@ -1553,9 +1553,12 @@ function showAlert(zone, msg, type) {
 // ── CATALOGO ──────────────────────────────────────
 async function cargarYRenderCatalogo() {
   document.getElementById('catalogo-list').innerHTML = '<div class="loading"><div class="spinner"></div><br>Cargando...</div>';
-  const { data, error } = await db.from('miembros').select('*, especies(*)').order('created_at', { ascending: false });
+  const { data, error } = await db.from('miembros').select('*, especies(nombre_comun, nombre_cientifico, foto_url, etapa_fenologica, metodo_propagacion, id, user_id, created_at)').order('created_at', { ascending: false });
   if (error) { document.getElementById('catalogo-list').innerHTML = '<div class="empty">Error al cargar datos.</div>'; return; }
-  allMiembros = data || [];
+  allMiembros = (data || []).map(m => ({
+    ...m,
+    especies: (m.especies || []).sort((a, b) => a.nombre_comun.localeCompare(b.nombre_comun, 'es'))
+  }));
   renderCatalogo();
 }
 
