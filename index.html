@@ -4,39 +4,41 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Frutas del Caribe</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root {
-    --green-dark: #1a3d1f;
-    --green-mid: #2e6b35;
-    --green-light: #4a9455;
-    --green-pale: #d4ead6;
-    --green-faint: #f0f7f0;
-    --amber: #c97b2a;
-    --amber-light: #fdf3e3;
-    --text: #1a1a1a;
-    --text-muted: #5a6a5c;
-    --border: #c8ddc9;
+    --green-dark: #2d5016;
+    --green-mid: #3d7020;
+    --green-light: #a8d444;
+    --green-pale: #eaf5c0;
+    --green-faint: #f8fae8;
+    --amber: #a8d444;
+    --amber-light: #eaf5c0;
+    --text: #1a2a08;
+    --text-muted: #6a8a30;
+    --border: #c8e090;
     --white: #ffffff;
     --radius: 12px;
     --radius-sm: 8px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--green-faint); color: var(--text); min-height: 100vh; }
+  body { font-family: 'Lato', sans-serif; background: var(--green-faint); color: var(--text); min-height: 100vh; }
 
   /* HEADER */
-  header { background: var(--green-dark); color: white; padding: 1.5rem 2rem; display: flex; align-items: center; gap: 1rem; }
-  header h1 { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; }
-  header p { font-size: 0.8rem; opacity: 0.65; margin-top: 2px; }
-  .logo { font-size: 2rem; }
+  header { background: #2d5016; color: white; padding: 1.25rem 2rem; display: flex; align-items: center; gap: 1rem; position: relative; overflow: hidden; }
+  header::before { content: ''; position: absolute; top: -30px; right: -30px; width: 120px; height: 120px; background: #3d7020; border-radius: 50%; opacity: 0.4; }
+  header::after { content: ''; position: absolute; bottom: -20px; left: 60px; width: 80px; height: 80px; background: #243f12; border-radius: 50%; opacity: 0.5; }
+  header h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; letter-spacing: 0.01em; color: #f8fae8; position: relative; z-index: 1; }
+  header p { font-size: 0.72rem; color: #a8d444; margin-top: 3px; letter-spacing: 0.1em; text-transform: uppercase; position: relative; z-index: 1; }
+  .logo { position: relative; z-index: 1; flex-shrink: 0; }
 
   /* NAV TABS */
-  nav { background: var(--white); border-bottom: 1px solid var(--border); display: flex; padding: 0 2rem; }
-  nav button { font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 500; padding: 1rem 1.25rem; border: none; background: none; color: var(--text-muted); cursor: pointer; border-bottom: 2.5px solid transparent; transition: all 0.2s; }
-  nav button.active { color: var(--green-mid); border-bottom-color: var(--green-mid); }
-  nav button:hover:not(.active) { color: var(--text); }
+  nav { background: #243f12; border-bottom: 2px solid #3d7020; display: flex; padding: 0 2rem; }
+  nav button { font-family: 'Lato', sans-serif; font-size: 0.875rem; font-weight: 700; padding: 1rem 1.25rem; border: none; background: none; color: #a8d444; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; letter-spacing: 0.04em; }
+  nav button.active { color: #f8fae8; border-bottom-color: #c8f040; }
+  nav button:hover:not(.active) { color: #f8fae8; }
 
   /* MAIN */
   main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
@@ -44,22 +46,22 @@
   .section.active { display: block; }
 
   /* CARDS */
-  .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.25rem; }
-  .card-title { font-family: 'Fraunces', serif; font-size: 1.1rem; color: var(--green-dark); margin-bottom: 1rem; }
+  .card { background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.25rem; position: relative; }
+  .card-title { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--green-dark); margin-bottom: 1rem; }
 
   /* FORMS */
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
   .form-group { display: flex; flex-direction: column; gap: 4px; }
   .form-group.full { grid-column: 1 / -1; }
-  label { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
-  input, textarea, select { font-family: 'DM Sans', sans-serif; font-size: 0.9rem; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--white); color: var(--text); transition: border-color 0.2s; }
-  input:focus, textarea:focus { outline: none; border-color: var(--green-mid); }
+  label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  input, textarea, select { font-family: 'Lato', sans-serif; font-size: 0.9rem; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--green-faint); color: var(--text); transition: border-color 0.2s; }
+  input:focus, textarea:focus { outline: none; border-color: var(--green-light); background: white; }
   textarea { resize: vertical; min-height: 70px; }
 
   /* SPECIES ENTRIES */
   .species-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1rem; }
-  .species-entry { background: var(--green-faint); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; }
-  .species-entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.8rem; font-weight: 500; color: var(--text-muted); }
+  .species-entry { background: var(--green-faint); border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 1rem; }
+  .species-entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
   .species-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
   .photo-upload { border: 1.5px dashed var(--border); border-radius: var(--radius-sm); padding: 10px; text-align: center; cursor: pointer; font-size: 0.78rem; color: var(--text-muted); position: relative; transition: border-color 0.2s; }
   .photo-upload:hover { border-color: var(--green-light); }
@@ -67,19 +69,19 @@
   .photo-preview { width: 100%; height: 80px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border); display: block; }
 
   /* BUTTONS */
-  .btn { font-family: 'DM Sans', sans-serif; font-size: 0.875rem; font-weight: 500; padding: 8px 18px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
-  .btn-primary { background: var(--green-mid); color: white; border-color: var(--green-mid); }
-  .btn-primary:hover { background: var(--green-dark); }
+  .btn { font-family: 'Lato', sans-serif; font-size: 0.875rem; font-weight: 700; padding: 8px 18px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; border: 1.5px solid transparent; letter-spacing: 0.04em; }
+  .btn-primary { background: var(--green-dark); color: #f8fae8; border-color: var(--green-dark); }
+  .btn-primary:hover { background: #1e3a0e; }
   .btn-outline { background: transparent; color: var(--text); border-color: var(--border); }
   .btn-outline:hover { background: var(--green-faint); }
   .btn-ghost { background: transparent; color: var(--text-muted); border: none; font-size: 0.8rem; padding: 4px 10px; }
   .btn-ghost:hover { color: #c0392b; }
-  .btn-add { background: var(--green-pale); color: var(--green-dark); border-color: var(--green-pale); font-size: 0.82rem; padding: 6px 14px; }
-  .btn-add:hover { background: #b8d9ba; }
-  .btn-export { background: var(--green-dark); color: white; border-color: var(--green-dark); }
-  .btn-export:hover { background: #0f2613; }
+  .btn-add { background: var(--green-pale); color: var(--green-dark); border-color: #a8d444; font-size: 0.82rem; padding: 6px 14px; }
+  .btn-add:hover { background: #d8f080; }
+  .btn-export { background: var(--green-dark); color: #f8fae8; border-color: var(--green-dark); }
+  .btn-export:hover { background: #1e3a0e; }
   .btn-sm { padding: 4px 10px; font-size: 0.78rem; }
-  .btn-danger { color: #c0392b; border-color: #e8b4b0; background: #fdf4f3; }
+  .btn-danger { color: #8b2020; border-color: #e8c0c0; background: #fdf8f8; }
   .btn-danger:hover { background: #fce8e6; }
   .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1rem; }
   .section-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -93,8 +95,8 @@
   .member-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; transition: box-shadow 0.2s; }
   .member-card:hover { box-shadow: 0 4px 16px rgba(46,107,53,0.08); }
   .member-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
-  .avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--green-pale); display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-size: 1rem; color: var(--green-dark); flex-shrink: 0; font-weight: 600; }
-  .member-name { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 600; color: var(--green-dark); }
+  .avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--green-pale); display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--green-dark); flex-shrink: 0; font-weight: 700; }
+  .member-name { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; color: var(--green-dark); }
   .member-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .project-badge { background: var(--amber-light); color: var(--amber); border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 500; }
   .maps-link { color: var(--green-mid); font-size: 0.78rem; text-decoration: none; display: inline-flex; align-items: center; gap: 3px; }
@@ -109,7 +111,7 @@
   /* STATS */
   .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
   .stat-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.1rem; text-align: center; }
-  .stat-num { font-family: 'Fraunces', serif; font-size: 2.2rem; color: var(--green-mid); font-weight: 600; line-height: 1; }
+  .stat-num { font-family: 'Playfair Display', serif; font-size: 2.2rem; color: var(--green-mid); font-weight: 700; line-height: 1; }
   .stat-label { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
   .rank-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--green-faint); font-size: 0.875rem; }
   .rank-row:last-child { border-bottom: none; }
@@ -211,14 +213,25 @@
 </div>
 
 <header>
-  <div class="logo">🥭</div>
+  <div class="logo">
+    <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+      <circle cx="26" cy="26" r="24" fill="#3d7020" stroke="#a8d444" stroke-width="1.5"/>
+      <path d="M26 8 C26 8 16 16 16 26 C16 34 20 43 26 45 C32 43 36 34 36 26 C36 16 26 8 26 8Z" fill="#5a9030"/>
+      <path d="M26 8 L26 45" stroke="#a8d444" stroke-width="1.2" fill="none"/>
+      <path d="M26 18 C21 15 16 20 18 25" stroke="#c8f040" stroke-width="1" fill="none"/>
+      <path d="M26 27 C31 24 35 29 32 34" stroke="#c8f040" stroke-width="1" fill="none"/>
+      <circle cx="26" cy="8" r="4" fill="#c8f040"/>
+      <circle cx="18" cy="25" r="2.5" fill="#a8d444" opacity="0.9"/>
+      <circle cx="32" cy="32" r="3" fill="#c8f040" opacity="0.8"/>
+    </svg>
+  </div>
   <div style="flex:1;">
     <h1>Frutas del Caribe</h1>
-    <p>Inventario de especies del Caribe colombiano</p>
+    <p>Inventario de especies frutales nativas y exóticas del Caribe colombiano</p>
   </div>
   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-    <span id="user-email-label" style="font-size:0.72rem;opacity:0.7;"></span>
-    <button onclick="cerrarSesion()" style="font-size:0.75rem;padding:4px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.3);background:transparent;color:white;cursor:pointer;font-family:'DM Sans',sans-serif;">Cerrar sesión</button>
+    <span id="user-email-label" style="font-size:0.72rem;color:#a8d444;opacity:0.8;"></span>
+    <button onclick="cerrarSesion()" style="font-size:0.75rem;padding:4px 12px;border-radius:6px;border:1px solid rgba(168,212,68,0.4);background:transparent;color:#a8d444;cursor:pointer;font-family:'Lato',sans-serif;font-weight:700;">Cerrar sesión</button>
   </div>
 </header>
 
@@ -1599,8 +1612,8 @@ async function renderCatalogo() {
             <div style="flex:1;">
               <div class="species-common">${e.nombre_comun}</div>
               ${e.nombre_cientifico ? `<div class="species-sci">${e.nombre_cientifico}</div>` : ''}
-              ${e.etapa_fenologica ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:var(--green-pale);color:var(--green-dark);border-radius:20px;padding:1px 8px;font-weight:500;">${e.etapa_fenologica}</span></div>` : ''}
-              ${e.metodo_propagacion ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:var(--amber-light);color:var(--amber);border-radius:20px;padding:1px 8px;font-weight:500;">${e.metodo_propagacion}</span></div>` : ''}
+              ${e.etapa_fenologica ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:#fff3e0;color:#e65100;border:1px solid #ffb74d;border-radius:20px;padding:1px 8px;font-weight:500;">${e.etapa_fenologica}</span></div>` : ''}
+              ${e.metodo_propagacion ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:#ffebee;color:#c62828;border:1px solid #ef9a9a;border-radius:20px;padding:1px 8px;font-weight:500;">${e.metodo_propagacion}</span></div>` : ''}
             </div>
             ${e.user_id === uid ? `<button class="btn btn-sm btn-danger" onclick="eliminarEspecie('${e.id}', '${m.id}')">✕</button>` : ''}
           </div>
