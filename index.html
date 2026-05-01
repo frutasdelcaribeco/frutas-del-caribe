@@ -603,8 +603,36 @@ function renderSpeciesEntries() {
         <input type="text" id="propag-otro-${i}" placeholder="Especifica el método..." style="display:${f.propagacion && !['Semilla','Injerto','Acodo','Acodo aéreo','Estaca','Esqueje','Colino','Hijuelo','Rizoma','Bulbo','Desconocido'].includes(f.propagacion)?'block':'none'};margin-top:6px;" value="${f.propagacion && !['Semilla','Injerto','Acodo','Acodo aéreo','Estaca','Esqueje','Colino','Hijuelo','Rizoma','Bulbo','Desconocido'].includes(f.propagacion)?f.propagacion:''}" oninput="tempSpecies[${i}].propagacion=this.value"/>
       </div>
       <div class="form-group">
-        <label>Etapa fenológica</label>
-        <select id="etapa-${i}" onchange="tempSpecies[${i}].etapa=this.value; document.getElementById('etapa-desc-${i}').innerHTML=etapaDescripcion(this.value)||'Selecciona una etapa para ver su descripción.'" style="margin-bottom:4px;">
+        <label>Origen</label>
+        <select id="origen-${i}" onchange="tempSpecies[${i}].origen=this.value">
+          <option value="">— Selecciona el origen —</option>
+          <option value="Nativa" ${f.origen==='Nativa'?'selected':''}>Nativa (originaria de la región o país)</option>
+          <option value="Silvestre" ${f.origen==='Silvestre'?'selected':''}>Silvestre (crece de forma natural sin intervención humana)</option>
+          <option value="Endémica" ${f.origen==='Endémica'?'selected':''}>Endémica (exclusiva de una región, no existe en otro lugar)</option>
+          <option value="Naturalizada" ${f.origen==='Naturalizada'?'selected':''}>Naturalizada (introducida pero ya se reproduce sola en el entorno)</option>
+          <option value="Introducida" ${f.origen==='Introducida'?'selected':''}>Introducida (traída de otro lugar por el ser humano)</option>
+          <option value="Cultivada" ${f.origen==='Cultivada'?'selected':''}>Cultivada (seleccionada y mejorada por el ser humano)</option>
+          <option value="Semicultivada" ${f.origen==='Semicultivada'?'selected':''}>Semicultivada (silvestre aprovechada sin domesticar completamente)</option>
+          <option value="En proceso de domesticación" ${f.origen==='En proceso de domesticación'?'selected':''}>En proceso de domesticación (silvestre en selección activa para cultivo)</option>
+          <option value="Cosmopolita" ${f.origen==='Cosmopolita'?'selected':''}>Cosmopolita (presente de forma natural en muchas regiones del mundo)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Estado de conservación (UICN)</label>
+        <select id="conservacion-${i}" onchange="tempSpecies[${i}].conservacion=this.value">
+          <option value="">— Selecciona el estado —</option>
+          <option value="NE - No evaluada" ${f.conservacion==='NE - No evaluada'?'selected':''}>NE — No evaluada (no ha sido evaluada con criterios UICN)</option>
+          <option value="DD - Datos insuficientes" ${f.conservacion==='DD - Datos insuficientes'?'selected':''}>DD — Datos insuficientes (información insuficiente para evaluarla)</option>
+          <option value="LC - Preocupación menor" ${f.conservacion==='LC - Preocupación menor'?'selected':''}>LC — Preocupación menor (abundante, sin amenazas significativas)</option>
+          <option value="NT - Casi amenazada" ${f.conservacion==='NT - Casi amenazada'?'selected':''}>NT — Casi amenazada (podría estar en riesgo en el futuro cercano)</option>
+          <option value="VU - Vulnerable" ${f.conservacion==='VU - Vulnerable'?'selected':''}>VU — Vulnerable (riesgo alto de extinción en estado silvestre)</option>
+          <option value="EN - En peligro" ${f.conservacion==='EN - En peligro'?'selected':''}>EN — En peligro (riesgo muy alto de extinción en estado silvestre)</option>
+          <option value="CR - En peligro crítico" ${f.conservacion==='CR - En peligro crítico'?'selected':''}>CR — En peligro crítico (riesgo extremadamente alto de extinción)</option>
+          <option value="EW - Extinta en estado silvestre" ${f.conservacion==='EW - Extinta en estado silvestre'?'selected':''}>EW — Extinta en estado silvestre (solo sobrevive en cultivo)</option>
+          <option value="EX - Extinta" ${f.conservacion==='EX - Extinta'?'selected':''}>EX — Extinta (ha desaparecido completamente)</option>
+        </select>
+        <div id="conservacion-manual-${i}" style="display:none;margin-top:4px;"></div>
+      </div> onchange="tempSpecies[${i}].etapa=this.value; document.getElementById('etapa-desc-${i}').innerHTML=etapaDescripcion(this.value)||'Selecciona una etapa para ver su descripción.'" style="margin-bottom:4px;">
           <option value="">— Selecciona una etapa —</option>
           <option value="Plántula" ${f.etapa==='Plántula'?'selected':''}>Plántula — recién germinada o trasplantada</option>
           <option value="Vegetativa" ${f.etapa==='Vegetativa'?'selected':''}>Vegetativa — crecimiento activo sin flores</option>
@@ -1385,6 +1413,78 @@ function onComunKey(e, idx) {
   }
 }
 
+// ── IUCN API ──────────────────────────────────────
+const IUCN_TOKEN = 'REEMPLAZA_CON_TU_CLAVE_IUCN';
+
+const IUCN_ESTADOS = {
+  'NE': 'NE - No evaluada',
+  'DD': 'DD - Datos insuficientes',
+  'LC': 'LC - Preocupación menor',
+  'NT': 'NT - Casi amenazada',
+  'VU': 'VU - Vulnerable',
+  'EN': 'EN - En peligro',
+  'CR': 'CR - En peligro crítico',
+  'EW': 'EW - Extinta en estado silvestre',
+  'EX': 'EX - Extinta'
+};
+
+async function consultarIUCN(cientifico, idx, tipo) {
+  if (!cientifico || !cientifico.trim()) return;
+  const genero = cientifico.trim().split(' ')[0];
+  const especie = cientifico.trim().split(' ')[1];
+  if (!especie) return;
+
+  const conservacionId = tipo === 'existente' ? `econservacion-${idx}` : `conservacion-${idx}`;
+  const manualId = tipo === 'existente' ? `econservacion-manual-${idx}` : `conservacion-manual-${idx}`;
+  const el = document.getElementById(conservacionId);
+  if (!el) return;
+
+  el.disabled = true;
+  el.style.color = '#8a7050';
+  const optBuscando = document.createElement('option');
+  optBuscando.value = ''; optBuscando.text = 'Consultando UICN...';
+  el.insertBefore(optBuscando, el.firstChild);
+  el.value = '';
+
+  try {
+    const resp = await fetch(`https://apiv3.iucnredlist.org/api/v3/species/${encodeURIComponent(cientifico.trim())}?token=${IUCN_TOKEN}`);
+    const data = await resp.json();
+    el.removeChild(optBuscando);
+    el.disabled = false;
+    el.style.color = '';
+
+    if (data.result && data.result.length > 0) {
+      const codigo = data.result[0].category;
+      const estadoCompleto = IUCN_ESTADOS[codigo] || '';
+      if (estadoCompleto) {
+        el.value = estadoCompleto;
+        if (tipo === 'existente') tempSpeciesExistente[idx].conservacion = estadoCompleto;
+        else tempSpecies[idx].conservacion = estadoCompleto;
+        const manual = document.getElementById(manualId);
+        if (manual) manual.style.display = 'none';
+      } else {
+        mostrarManualConservacion(idx, tipo);
+      }
+    } else {
+      mostrarManualConservacion(idx, tipo);
+    }
+  } catch(e) {
+    if (el.firstChild && el.firstChild.value === '') el.removeChild(el.firstChild);
+    el.disabled = false;
+    el.style.color = '';
+    mostrarManualConservacion(idx, tipo);
+  }
+}
+
+function mostrarManualConservacion(idx, tipo) {
+  const manualId = tipo === 'existente' ? `econservacion-manual-${idx}` : `conservacion-manual-${idx}`;
+  const manual = document.getElementById(manualId);
+  if (manual) {
+    manual.style.display = 'block';
+    manual.innerHTML = '<small style="color:#8a7050;font-size:0.75rem;">No encontrada en UICN. Selecciona manualmente:</small>';
+  }
+}
+
 function selectFruta(idx, comun, cientifico) {
   tempSpecies[idx].comun = comun;
   tempSpecies[idx].cientifico = cientifico;
@@ -1393,6 +1493,7 @@ function selectFruta(idx, comun, cientifico) {
   if (ci) ci.value = comun;
   if (sc) { sc.value = cientifico; sc.style.fontStyle = 'italic'; }
   closeDropdown(idx);
+  if (cientifico) consultarIUCN(cientifico, idx, 'nuevo');
 }
 
 async function guardarNuevasEspeciesEnCatalogo(especies) {
@@ -1438,6 +1539,7 @@ function selectCient(idx, comun, cientifico) {
   if (ci) ci.value = comun;
   if (sc) sc.value = cientifico;
   closeCientDropdown(idx);
+  if (cientifico) consultarIUCN(cientifico, idx, 'nuevo');
 }
 
 function closeCientDropdown(idx) {
@@ -1472,6 +1574,7 @@ function selectECient(idx, comun, cientifico) {
   if (ci) ci.value = comun;
   if (sc) sc.value = cientifico;
   closeECientDropdown(idx);
+  if (cientifico) consultarIUCN(cientifico, idx, 'existente');
 }
 
 function closeECientDropdown(idx) {
@@ -1526,6 +1629,8 @@ async function guardarMiembro() {
       foto_url: f.foto || null,
       etapa_fenologica: f.etapa || null,
       metodo_propagacion: f.propagacion || null,
+      origen: f.origen || null,
+      estado_conservacion: f.conservacion || null,
       user_id: user.id
     }));
 
@@ -1565,7 +1670,7 @@ function showAlert(zone, msg, type) {
 // ── CATALOGO ──────────────────────────────────────
 async function cargarYRenderCatalogo() {
   document.getElementById('catalogo-list').innerHTML = '<div class="loading"><div class="spinner"></div><br>Cargando...</div>';
-  const { data, error } = await db.from('miembros').select('*, especies(nombre_comun, nombre_cientifico, foto_url, etapa_fenologica, metodo_propagacion, id, user_id, created_at)').order('created_at', { ascending: false });
+  const { data, error } = await db.from('miembros').select('*, especies(nombre_comun, nombre_cientifico, foto_url, etapa_fenologica, metodo_propagacion, origen, estado_conservacion, id, user_id, created_at)').order('created_at', { ascending: false });
   if (error) { document.getElementById('catalogo-list').innerHTML = '<div class="empty">Error al cargar datos.</div>'; return; }
   allMiembros = (data || []).map(m => ({
     ...m,
@@ -1613,6 +1718,8 @@ async function renderCatalogo() {
               ${e.nombre_cientifico ? `<div class="species-sci">${e.nombre_cientifico}</div>` : ''}
               ${e.etapa_fenologica ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:#fff3e0;color:#e65100;border:1px solid #ffb74d;border-radius:20px;padding:1px 8px;font-weight:500;">${e.etapa_fenologica}</span></div>` : ''}
               ${e.metodo_propagacion ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:#ffebee;color:#c62828;border:1px solid #ef9a9a;border-radius:20px;padding:1px 8px;font-weight:500;">${e.metodo_propagacion}</span></div>` : ''}
+              ${e.origen ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:#e8f0fe;color:#1a56c4;border:1px solid #93b4f8;border-radius:20px;padding:1px 8px;font-weight:500;">${e.origen}</span></div>` : ''}
+              ${e.estado_conservacion ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:#f3e8ff;color:#6b21a8;border:1px solid #c4b5fd;border-radius:20px;padding:1px 8px;font-weight:500;">${e.estado_conservacion.split(' - ')[0]}</span></div>` : ''}
             </div>
             ${e.user_id === uid ? `<button class="btn btn-sm btn-danger" onclick="eliminarEspecie('${e.id}', '${m.id}')">✕</button>` : ''}
           </div>
@@ -1692,6 +1799,8 @@ function exportarExcel() {
         'Nombre científico': e.nombre_cientifico || '',
         'Etapa fenológica': e.etapa_fenologica || '',
         'Método de propagación': e.metodo_propagacion || '',
+        'Origen': e.origen || '',
+        'Estado de conservación': e.estado_conservacion || '',
         'Tiene foto': e.foto_url ? 'Sí' : 'No'
       });
     });
@@ -1820,6 +1929,37 @@ function renderSpeciesEntriesExistente() {
         <input type="text" id="epropag-otro-${i}" placeholder="Especifica el método..." style="display:none;margin-top:6px;" oninput="tempSpeciesExistente[${i}].propagacion=this.value"/>
       </div>
       <div class="form-group">
+        <label>Origen</label>
+        <select id="erigen-${i}" onchange="tempSpeciesExistente[${i}].origen=this.value">
+          <option value="">— Selecciona el origen —</option>
+          <option value="Nativa">Nativa (originaria de la región o país)</option>
+          <option value="Silvestre">Silvestre (crece de forma natural sin intervención humana)</option>
+          <option value="Endémica">Endémica (exclusiva de una región, no existe en otro lugar)</option>
+          <option value="Naturalizada">Naturalizada (introducida pero ya se reproduce sola en el entorno)</option>
+          <option value="Introducida">Introducida (traída de otro lugar por el ser humano)</option>
+          <option value="Cultivada">Cultivada (seleccionada y mejorada por el ser humano)</option>
+          <option value="Semicultivada">Semicultivada (silvestre aprovechada sin domesticar completamente)</option>
+          <option value="En proceso de domesticación">En proceso de domesticación (silvestre en selección activa para cultivo)</option>
+          <option value="Cosmopolita">Cosmopolita (presente de forma natural en muchas regiones del mundo)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Estado de conservación (UICN)</label>
+        <select id="econservacion-${i}" onchange="tempSpeciesExistente[${i}].conservacion=this.value">
+          <option value="">— Selecciona el estado —</option>
+          <option value="NE - No evaluada">NE — No evaluada (no ha sido evaluada con criterios UICN)</option>
+          <option value="DD - Datos insuficientes">DD — Datos insuficientes (información insuficiente para evaluarla)</option>
+          <option value="LC - Preocupación menor">LC — Preocupación menor (abundante, sin amenazas significativas)</option>
+          <option value="NT - Casi amenazada">NT — Casi amenazada (podría estar en riesgo en el futuro cercano)</option>
+          <option value="VU - Vulnerable">VU — Vulnerable (riesgo alto de extinción en estado silvestre)</option>
+          <option value="EN - En peligro">EN — En peligro (riesgo muy alto de extinción en estado silvestre)</option>
+          <option value="CR - En peligro crítico">CR — En peligro crítico (riesgo extremadamente alto de extinción)</option>
+          <option value="EW - Extinta en estado silvestre">EW — Extinta en estado silvestre (solo sobrevive en cultivo)</option>
+          <option value="EX - Extinta">EX — Extinta (ha desaparecido completamente)</option>
+        </select>
+        <div id="econservacion-manual-${i}" style="display:none;margin-top:4px;"></div>
+      </div>
+      <div class="form-group">
         <label>Etapa fenológica</label>
         <select id="eetapa-${i}" onchange="tempSpeciesExistente[${i}].etapa=this.value; document.getElementById('eetapa-desc-${i}').innerHTML=etapaDescripcion(this.value)||'Selecciona una etapa para ver su descripción.'" style="margin-bottom:4px;">
           <option value="">— Selecciona una etapa —</option>
@@ -1874,6 +2014,7 @@ function selectEFruta(idx, comun, cientifico) {
   if (ci) ci.value = comun;
   if (sc) { sc.value = cientifico; sc.style.fontStyle = 'italic'; }
   closeEDropdown(idx);
+  if (cientifico) consultarIUCN(cientifico, idx, 'existente');
 }
 
 function closeEDropdown(idx) {
@@ -1907,6 +2048,8 @@ async function guardarEspeciesExistente() {
       foto_url: f.foto || null,
       etapa_fenologica: f.etapa || null,
       metodo_propagacion: f.propagacion || null,
+      origen: f.origen || null,
+      estado_conservacion: f.conservacion || null,
       user_id: user.id
     }));
     const { error } = await db.from('especies').insert(especiesData);
