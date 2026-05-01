@@ -424,9 +424,39 @@
   <!-- ESTADISTICAS -->
   <div id="tab-estadisticas" class="section">
     <div class="stats-grid" id="stats-grid"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+      <div class="card">
+        <div class="card-title">Especies más cultivadas</div>
+        <div id="frutas-ranking"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Géneros botánicos</div>
+        <div id="generos-ranking"></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+      <div class="card">
+        <div class="card-title">Miembros por departamento</div>
+        <div id="region-ranking"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Métodos de propagación</div>
+        <div id="propagacion-ranking"></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+      <div class="card">
+        <div class="card-title">Estados de conservación</div>
+        <div id="conservacion-ranking"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Origen de las especies</div>
+        <div id="origen-ranking"></div>
+      </div>
+    </div>
     <div class="card">
-      <div class="card-title">Frutas más cultivadas</div>
-      <div id="frutas-ranking"><div class="loading"><div class="spinner"></div></div></div>
+      <div class="card-title">Usos más registrados</div>
+      <div id="usos-ranking"></div>
     </div>
   </div>
 
@@ -2084,6 +2114,24 @@ async function eliminarEspecie(especieId, miembroId) {
 }
 
 // ── ESTADISTICAS ──────────────────────────────────
+function renderRanking(elId, data, color) {
+  const sorted = Object.entries(data).filter(([k]) => k).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const max = sorted.length ? sorted[0][1] : 1;
+  document.getElementById(elId).innerHTML = !sorted.length
+    ? '<div class="empty" style="padding:1rem;">Sin datos aún.</div>'
+    : sorted.map(([k, v]) => `
+      <div class="rank-row">
+        <span style="font-size:0.82rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${k}">${k}</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <div style="width:80px;height:6px;background:var(--green-faint);border-radius:3px;">
+            <div style="width:${Math.round(v/max*100)}%;height:6px;background:${color};border-radius:3px;"></div>
+          </div>
+          <span class="badge" style="min-width:28px;text-align:center;">${v}</span>
+        </div>
+      </div>
+    `).join('');
+}
+
 async function cargarYRenderStats() {
   const { data } = await db.from('miembros').select('*, especies(*)');
   const miembros = data || [];
@@ -2092,30 +2140,71 @@ async function cargarYRenderStats() {
   const unicas = [...new Set(allEsp.map(e => e.nombre_comun.toLowerCase()))].length;
   const prom = total ? (allEsp.length / total).toFixed(1) : 0;
   const conMaps = miembros.filter(m => m.maps).length;
+  const conFoto = allEsp.filter(e => e.foto_url).length;
 
   document.getElementById('stats-grid').innerHTML = `
-    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Miembros registrados</div></div>
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Miembros</div></div>
     <div class="stat-card"><div class="stat-num">${unicas}</div><div class="stat-label">Especies únicas</div></div>
+    <div class="stat-card"><div class="stat-num">${allEsp.length}</div><div class="stat-label">Registros totales</div></div>
     <div class="stat-card"><div class="stat-num">${prom}</div><div class="stat-label">Promedio por miembro</div></div>
     <div class="stat-card"><div class="stat-num">${conMaps}</div><div class="stat-label">Con ubicación</div></div>
+    <div class="stat-card"><div class="stat-num">${conFoto}</div><div class="stat-label">Con foto principal</div></div>
   `;
 
-  const freq = {};
-  allEsp.forEach(e => { freq[e.nombre_comun] = (freq[e.nombre_comun] || 0) + 1; });
-  const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]);
-  const max = sorted.length ? sorted[0][1] : 1;
+  // Especies más cultivadas
+  const freqEsp = {};
+  allEsp.forEach(e => { freqEsp[e.nombre_comun] = (freqEsp[e.nombre_comun] || 0) + 1; });
+  renderRanking('frutas-ranking', freqEsp, '#2d6b35');
 
-  document.getElementById('frutas-ranking').innerHTML = !sorted.length
-    ? '<div class="empty">Sin datos aún.</div>'
-    : sorted.map(([f, c]) => `
-      <div class="rank-row">
-        <span>${f}</span>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${Math.round(c/max*100)}%"></div></div>
-          <span class="badge">${c} miembro${c > 1 ? 's' : ''}</span>
-        </div>
-      </div>
-    `).join('');
+  // Géneros botánicos
+  const freqGen = {};
+  allEsp.forEach(e => {
+    if (e.nombre_cientifico) {
+      const gen = e.nombre_cientifico.trim().split(' ')[0];
+      if (gen) freqGen[gen] = (freqGen[gen] || 0) + 1;
+    }
+  });
+  renderRanking('generos-ranking', freqGen, '#4a9455');
+
+  // Miembros por departamento
+  const freqReg = {};
+  miembros.forEach(m => {
+    if (m.region) {
+      const dep = m.region.includes(',') ? m.region.split(',').pop().trim() : m.region;
+      freqReg[dep] = (freqReg[dep] || 0) + 1;
+    }
+  });
+  renderRanking('region-ranking', freqReg, '#1a6b42');
+
+  // Métodos de propagación
+  const freqProp = {};
+  allEsp.forEach(e => { if (e.metodo_propagacion) freqProp[e.metodo_propagacion] = (freqProp[e.metodo_propagacion] || 0) + 1; });
+  renderRanking('propagacion-ranking', freqProp, '#5a9030');
+
+  // Estados de conservación
+  const freqCons = {};
+  allEsp.forEach(e => {
+    if (e.estado_conservacion) {
+      const code = e.estado_conservacion.split(' - ')[0];
+      freqCons[code] = (freqCons[code] || 0) + 1;
+    }
+  });
+  renderRanking('conservacion-ranking', freqCons, '#8b3098');
+
+  // Origen
+  const freqOrig = {};
+  allEsp.forEach(e => { if (e.origen) freqOrig[e.origen] = (freqOrig[e.origen] || 0) + 1; });
+  renderRanking('origen-ranking', freqOrig, '#1a56c4');
+
+  // Usos
+  const freqUsos = {};
+  allEsp.forEach(e => {
+    if (e.usos) e.usos.split(',').forEach(u => {
+      const uso = u.trim();
+      if (uso) freqUsos[uso] = (freqUsos[uso] || 0) + 1;
+    });
+  });
+  renderRanking('usos-ranking', freqUsos, '#166534');
 }
 
 // ── EXPORTAR EXCEL ────────────────────────────────
