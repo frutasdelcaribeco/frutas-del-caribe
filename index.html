@@ -1847,7 +1847,20 @@ async function renderCatalogo() {
   if (!filtered.length) { list.innerHTML = '<div class="empty">No se encontraron miembros.</div>'; return; }
   const { data: { user } } = await db.auth.getUser();
   const uid = user ? user.id : null;
-  list.innerHTML = filtered.map(m => `
+
+  list.innerHTML = filtered.map(m => {
+    let especies = (m.especies || []);
+    if (filtroEtapa || filtroOrigen || filtroConservacion || filtroGenero) {
+      especies = especies.filter(e => {
+        const matchEtapa = !filtroEtapa || e.etapa_fenologica === filtroEtapa;
+        const matchOrigen = !filtroOrigen || e.origen === filtroOrigen;
+        const matchConservacion = !filtroConservacion || (e.estado_conservacion || '').startsWith(filtroConservacion);
+        const matchGenero = !filtroGenero || (e.nombre_cientifico || '').trim().startsWith(filtroGenero);
+        return matchEtapa && matchOrigen && matchConservacion && matchGenero;
+      });
+    }
+    if (!especies.length) return '';
+    return `
     <div class="member-card">
       <div class="member-header">
         <div class="avatar">${initials(m.nombre)}</div>
@@ -1857,14 +1870,14 @@ async function renderCatalogo() {
             ${m.proyecto ? `<span class="project-badge">${m.proyecto}</span>` : ''}
             <span>${m.region || 'Sin región'}</span>
             <span>·</span>
-            <span>${(m.especies || []).length} especie(s)</span>
+            <span>${especies.length} especie(s)</span>
             ${m.maps ? `<a href="${m.maps}" target="_blank" class="maps-link">📍 Ver en Maps</a>` : ''}
           </div>
         </div>
         ${m.user_id === uid ? `<button class="btn btn-sm btn-danger" onclick="eliminarMiembro('${m.id}')">Eliminar</button>` : ''}
       </div>
       <div>
-        ${(m.especies || []).map(e => `
+        ${especies.map(e => `
           <div class="species-item">
             ${e.foto_url
               ? `<img src="${e.foto_url}" class="species-thumb"/>`
@@ -1887,7 +1900,8 @@ async function renderCatalogo() {
       </div>
       ${m.notas ? `<p style="font-size:0.78rem;color:var(--text-muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--green-faint);">${m.notas}</p>` : ''}
     </div>
-  `).join('');
+  `;
+  }).filter(Boolean).join('');
 }
 
 async function eliminarMiembro(id) {
