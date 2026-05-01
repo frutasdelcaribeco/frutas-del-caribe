@@ -868,10 +868,17 @@ function renderSpeciesEntries() {
         </div>
       </div>
       <div class="form-group">
-        <label>Foto de la especie</label>
-        ${tempPhotos[i]
-          ? `<img src="${tempPhotos[i]}" class="photo-preview"/><button class="btn btn-ghost btn-sm" style="margin-top:4px;" onclick="clearPhoto(${i})">✕ Quitar foto</button>`
-          : `<div class="photo-upload"><input type="file" accept="image/*" onchange="handlePhoto(event,${i})"/>Toca para subir foto</div>`}
+        <label>Fotos de la especie</label>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
+          ${['Hábito','Hojas','Tallo','Flor','Fruto'].map(tipo => `
+            <div style="text-align:center;">
+              ${tempPhotos[i] && tempPhotos[i][tipo]
+                ? `<img src="${tempPhotos[i][tipo]}" style="width:100%;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer;" onclick="clearPhotoTipo(${i},'${tipo}')"/>`
+                : `<div class="photo-upload" style="height:60px;"><input type="file" accept="image/*" onchange="handlePhotoTipo(event,${i},'${tipo}')"/><span style="font-size:0.7rem;">+</span></div>`}
+              <div style="font-size:0.65rem;color:var(--text-muted);margin-top:2px;">${tipo}</div>
+            </div>
+          `).join('')}
+        </div>
       </div>
     </div>
   `).join('');
@@ -1836,6 +1843,24 @@ function handlePhoto(e, idx) {
 
 function clearPhoto(idx) { delete tempPhotos[idx]; tempSpecies[idx].foto = null; renderSpeciesEntries(); }
 
+function handlePhotoTipo(e, idx, tipo) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    if (!tempPhotos[idx] || typeof tempPhotos[idx] === 'string') tempPhotos[idx] = {};
+    tempPhotos[idx][tipo] = ev.target.result;
+    tempSpecies[idx].fotos = tempPhotos[idx];
+    renderSpeciesEntries();
+  };
+  r.readAsDataURL(file);
+}
+
+function clearPhotoTipo(idx, tipo) {
+  if (tempPhotos[idx] && typeof tempPhotos[idx] === 'object') delete tempPhotos[idx][tipo];
+  if (tempSpecies[idx]) tempSpecies[idx].fotos = tempPhotos[idx];
+  renderSpeciesEntries();
+}
+
 // ── GUARDAR MIEMBRO ───────────────────────────────
 async function guardarMiembro() {
   const nombre = document.getElementById('inp-nombre').value.trim();
@@ -1883,8 +1908,27 @@ async function guardarMiembro() {
       user_id: user.id
     }));
 
-    const { error: errE } = await db.from('especies').insert(especiesData);
+    const { data: especiesInsertadas, error: errE } = await db.from('especies').insert(especiesData).select();
     if (errE) throw errE;
+
+    // Guardar fotos en fotos_especies
+    for (let fi = 0; fi < tempSpecies.length; fi++) {
+      const f = tempSpecies[fi];
+      const especie = especiesInsertadas[fi];
+      if (!especie || !f.fotos) continue;
+      for (const tipo of Object.keys(f.fotos)) {
+        if (!f.fotos[tipo]) continue;
+        const base64 = f.fotos[tipo];
+        const blob = await fetch(base64).then(r => r.blob());
+        const ext = blob.type.split('/')[1] || 'jpg';
+        const path = `${user.id}/${especie.id}/${tipo}.${ext}`;
+        const { error: upErr } = await db.storage.from('fotos-especies').upload(path, blob, { upsert: true });
+        if (!upErr) {
+          const { data: urlData } = db.storage.from('fotos-especies').getPublicUrl(path);
+          await db.from('fotos_especies').insert({ especie_id: especie.id, foto_url: urlData.publicUrl, tipo_foto: tipo, user_id: user.id });
+        }
+      }
+    }
 
     showAlert('reg', `✓ Miembro "${nombre}" registrado con ${tempSpecies.length} especie(s).`, 'ok');
     await guardarNuevasEspeciesEnCatalogo(tempSpecies);
@@ -2314,10 +2358,17 @@ function renderSpeciesEntriesExistente() {
         </div>
       </div>
       <div class="form-group">
-        <label>Foto</label>
-        ${tempPhotosExistente[i]
-          ? `<img src="${tempPhotosExistente[i]}" class="photo-preview"/><button class="btn btn-ghost btn-sm" style="margin-top:4px;" onclick="clearEPhoto(${i})">✕ Quitar foto</button>`
-          : `<div class="photo-upload"><input type="file" accept="image/*" onchange="handleEPhoto(event,${i})"/>Toca para subir foto</div>`}
+        <label>Fotos de la especie</label>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
+          ${['Hábito','Hojas','Tallo','Flor','Fruto'].map(tipo => `
+            <div style="text-align:center;">
+              ${tempPhotosExistente[i] && tempPhotosExistente[i][tipo]
+                ? `<img src="${tempPhotosExistente[i][tipo]}" style="width:100%;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer;" onclick="clearEPhotoTipo(${i},'${tipo}')"/>`
+                : `<div class="photo-upload" style="height:60px;"><input type="file" accept="image/*" onchange="handleEPhotoTipo(event,${i},'${tipo}')"/><span style="font-size:0.7rem;">+</span></div>`}
+              <div style="font-size:0.65rem;color:var(--text-muted);margin-top:2px;">${tipo}</div>
+            </div>
+          `).join('')}
+        </div>
       </div>
     </div>
   `).join('');
@@ -2370,6 +2421,24 @@ function handleEPhoto(e, idx) {
 
 function clearEPhoto(idx) { delete tempPhotosExistente[idx]; tempSpeciesExistente[idx].foto = null; renderSpeciesEntriesExistente(); }
 
+function handleEPhotoTipo(e, idx, tipo) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    if (!tempPhotosExistente[idx] || typeof tempPhotosExistente[idx] === 'string') tempPhotosExistente[idx] = {};
+    tempPhotosExistente[idx][tipo] = ev.target.result;
+    tempSpeciesExistente[idx].fotos = tempPhotosExistente[idx];
+    renderSpeciesEntriesExistente();
+  };
+  r.readAsDataURL(file);
+}
+
+function clearEPhotoTipo(idx, tipo) {
+  if (tempPhotosExistente[idx] && typeof tempPhotosExistente[idx] === 'object') delete tempPhotosExistente[idx][tipo];
+  if (tempSpeciesExistente[idx]) tempSpeciesExistente[idx].fotos = tempPhotosExistente[idx];
+  renderSpeciesEntriesExistente();
+}
+
 async function guardarEspeciesExistente() {
   if (!miembroSeleccionadoId) { showAlert('existente', 'No hay miembro seleccionado.', 'err'); return; }
   if (!tempSpeciesExistente.length) { showAlert('existente', 'Agrega al menos una especie.', 'err'); return; }
@@ -2393,14 +2462,30 @@ async function guardarEspeciesExistente() {
       altitud_cultivo: f.altitud || null,
       usos: f.usos || null,
       parte_comestible: f.parte || null,
-      temporada_cosecha: f.temporada || null,
-      altitud_cultivo: f.altitud || null,
-      usos: f.usos || null,
-      parte_comestible: f.parte || null,
       user_id: user.id
     }));
-    const { error } = await db.from('especies').insert(especiesData);
+    const { data: especiesInsertadasE, error } = await db.from('especies').insert(especiesData).select();
     if (error) throw error;
+
+    // Guardar fotos en fotos_especies
+    for (let fi = 0; fi < tempSpeciesExistente.length; fi++) {
+      const f = tempSpeciesExistente[fi];
+      const especie = especiesInsertadasE[fi];
+      if (!especie || !f.fotos) continue;
+      for (const tipo of Object.keys(f.fotos)) {
+        if (!f.fotos[tipo]) continue;
+        const base64 = f.fotos[tipo];
+        const blob = await fetch(base64).then(r => r.blob());
+        const ext = blob.type.split('/')[1] || 'jpg';
+        const path = `${user.id}/${especie.id}/${tipo}.${ext}`;
+        const { error: upErr } = await db.storage.from('fotos-especies').upload(path, blob, { upsert: true });
+        if (!upErr) {
+          const { data: urlData } = db.storage.from('fotos-especies').getPublicUrl(path);
+          await db.from('fotos_especies').insert({ especie_id: especie.id, foto_url: urlData.publicUrl, tipo_foto: tipo, user_id: user.id });
+        }
+      }
+    }
+
     showAlert('existente', `✓ ${tempSpeciesExistente.length} especie(s) agregadas correctamente.`, 'ok');
     await guardarNuevasEspeciesEnCatalogo(tempSpeciesExistente);
     cancelarAgregarEspecies();
