@@ -651,6 +651,50 @@ function renderSpeciesEntries() {
         </div>
       </div>
       <div class="form-group">
+        <label>Temporada de cosecha</label>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="temporada-${i}">
+          ${['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((m,mi) => `
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;font-weight:400;color:var(--text);cursor:pointer;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--color-background-primary);">
+              <input type="checkbox" value="${m}" onchange="actualizarTemporada(${i})" style="width:auto;padding:0;margin:0;border:none;"/> ${m}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Altitud de cultivo</label>
+        <select id="altitud-${i}" onchange="tempSpecies[${i}].altitud=this.value">
+          <option value="">— Selecciona el rango —</option>
+          <option value="0 - 500 msnm" ${f.altitud==='0 - 500 msnm'?'selected':''}>0 - 500 msnm (tierras bajas, trópico costero)</option>
+          <option value="500 - 1000 msnm" ${f.altitud==='500 - 1000 msnm'?'selected':''}>500 - 1.000 msnm (trópico cálido)</option>
+          <option value="1000 - 1500 msnm" ${f.altitud==='1000 - 1500 msnm'?'selected':''}>1.000 - 1.500 msnm (trópico templado bajo)</option>
+          <option value="1500 - 2000 msnm" ${f.altitud==='1500 - 2000 msnm'?'selected':''}>1.500 - 2.000 msnm (trópico templado)</option>
+          <option value="2000 - 2500 msnm" ${f.altitud==='2000 - 2500 msnm'?'selected':''}>2.000 - 2.500 msnm (trópico frío)</option>
+          <option value="2500 - 3000 msnm" ${f.altitud==='2500 - 3000 msnm'?'selected':''}>2.500 - 3.000 msnm (subpáramo)</option>
+          <option value="Más de 3000 msnm" ${f.altitud==='Más de 3000 msnm'?'selected':''}>Más de 3.000 msnm (páramo)</option>
+          <option value="Múltiples rangos" ${f.altitud==='Múltiples rangos'?'selected':''}>Múltiples rangos (adaptable a varias altitudes)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Usos</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;" id="usos-${i}">
+          ${['Alimentario','Medicinal','Ornamental','Maderable','Apícola','Colorante','Cosmético','Artesanal','Forraje','Restauración ecológica'].map(u => `
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;font-weight:400;color:var(--text);cursor:pointer;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--color-background-primary);">
+              <input type="checkbox" value="${u}" onchange="actualizarUsos(${i})" style="width:auto;padding:0;margin:0;border:none;"/> ${u}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Parte comestible</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;" id="parte-${i}">
+          ${['Pulpa','Semilla','Cáscara','Flor','Hoja','Raíz','Tallo','Jugo','Aceite','Toda la fruta'].map(p => `
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;font-weight:400;color:var(--text);cursor:pointer;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--color-background-primary);">
+              <input type="checkbox" value="${p}" onchange="actualizarParteComestible(${i})" style="width:auto;padding:0;margin:0;border:none;"/> ${p}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      <div class="form-group">
         <label>Foto de la especie</label>
         ${tempPhotos[i]
           ? `<img src="${tempPhotos[i]}" class="photo-preview"/><button class="btn btn-ghost btn-sm" style="margin-top:4px;" onclick="clearPhoto(${i})">✕ Quitar foto</button>`
@@ -658,6 +702,31 @@ function renderSpeciesEntries() {
       </div>
     </div>
   `).join('');
+}
+
+function actualizarTemporada(idx) {
+  const checks = document.querySelectorAll(`#temporada-${idx} input:checked`);
+  tempSpecies[idx].temporada = Array.from(checks).map(c => c.value).join(', ');
+}
+function actualizarUsos(idx) {
+  const checks = document.querySelectorAll(`#usos-${idx} input:checked`);
+  tempSpecies[idx].usos = Array.from(checks).map(c => c.value).join(', ');
+}
+function actualizarParteComestible(idx) {
+  const checks = document.querySelectorAll(`#parte-${idx} input:checked`);
+  tempSpecies[idx].parte = Array.from(checks).map(c => c.value).join(', ');
+}
+function actualizarETemporada(idx) {
+  const checks = document.querySelectorAll(`#etemporada-${idx} input:checked`);
+  tempSpeciesExistente[idx].temporada = Array.from(checks).map(c => c.value).join(', ');
+}
+function actualizarEUsos(idx) {
+  const checks = document.querySelectorAll(`#eusos-${idx} input:checked`);
+  tempSpeciesExistente[idx].usos = Array.from(checks).map(c => c.value).join(', ');
+}
+function actualizarEParteComestible(idx) {
+  const checks = document.querySelectorAll(`#eparte-${idx} input:checked`);
+  tempSpeciesExistente[idx].parte = Array.from(checks).map(c => c.value).join(', ');
 }
 
 function etapaDescripcion(etapa) {
@@ -1634,6 +1703,10 @@ async function guardarMiembro() {
       metodo_propagacion: f.propagacion || null,
       origen: f.origen || null,
       estado_conservacion: f.conservacion || null,
+      temporada_cosecha: f.temporada || null,
+      altitud_cultivo: f.altitud || null,
+      usos: f.usos || null,
+      parte_comestible: f.parte || null,
       user_id: user.id
     }));
 
@@ -1673,7 +1746,7 @@ function showAlert(zone, msg, type) {
 // ── CATALOGO ──────────────────────────────────────
 async function cargarYRenderCatalogo() {
   document.getElementById('catalogo-list').innerHTML = '<div class="loading"><div class="spinner"></div><br>Cargando...</div>';
-  const { data, error } = await db.from('miembros').select('*, especies(nombre_comun, nombre_cientifico, foto_url, etapa_fenologica, metodo_propagacion, origen, estado_conservacion, id, user_id, created_at)').order('created_at', { ascending: false });
+  const { data, error } = await db.from('miembros').select('*, especies(nombre_comun, nombre_cientifico, foto_url, etapa_fenologica, metodo_propagacion, origen, estado_conservacion, temporada_cosecha, altitud_cultivo, usos, parte_comestible, id, user_id, created_at)').order('created_at', { ascending: false });
   if (error) { document.getElementById('catalogo-list').innerHTML = '<div class="empty">Error al cargar datos.</div>'; return; }
   allMiembros = (data || []).map(m => ({
     ...m,
@@ -1723,6 +1796,10 @@ async function renderCatalogo() {
               ${e.metodo_propagacion ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:#ffebee;color:#c62828;border:1px solid #ef9a9a;border-radius:20px;padding:1px 8px;font-weight:500;">${e.metodo_propagacion}</span></div>` : ''}
               ${e.origen ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:#e8f0fe;color:#1a56c4;border:1px solid #93b4f8;border-radius:20px;padding:1px 8px;font-weight:500;">${e.origen}</span></div>` : ''}
               ${e.estado_conservacion ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:#f3e8ff;color:#6b21a8;border:1px solid #c4b5fd;border-radius:20px;padding:1px 8px;font-weight:500;">${e.estado_conservacion.split(' - ')[0]}</span></div>` : ''}
+              ${e.temporada_cosecha ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:#fef9e0;color:#854d0e;border:1px solid #fcd34d;border-radius:20px;padding:1px 8px;font-weight:500;">🗓 ${e.temporada_cosecha}</span></div>` : ''}
+              ${e.usos ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:#f0fdf4;color:#166534;border:1px solid #86efac;border-radius:20px;padding:1px 8px;font-weight:500;">${e.usos}</span></div>` : ''}
+              ${e.parte_comestible ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:#fff7ed;color:#9a3412;border:1px solid #fdba74;border-radius:20px;padding:1px 8px;font-weight:500;">${e.parte_comestible}</span></div>` : ''}
+              ${e.altitud_cultivo ? `<div style="font-size:0.72rem;margin-top:2px;"><span style="background:#f0f9ff;color:#0c4a6e;border:1px solid #7dd3fc;border-radius:20px;padding:1px 8px;font-weight:500;">⛰ ${e.altitud_cultivo}</span></div>` : ''}
             </div>
             ${e.user_id === uid ? `<button class="btn btn-sm btn-danger" onclick="eliminarEspecie('${e.id}', '${m.id}')">✕</button>` : ''}
           </div>
@@ -1804,6 +1881,10 @@ function exportarExcel() {
         'Método de propagación': e.metodo_propagacion || '',
         'Origen': e.origen || '',
         'Estado de conservación': e.estado_conservacion || '',
+        'Temporada de cosecha': e.temporada_cosecha || '',
+        'Altitud de cultivo': e.altitud_cultivo || '',
+        'Usos': e.usos || '',
+        'Parte comestible': e.parte_comestible || '',
         'Tiene foto': e.foto_url ? 'Sí' : 'No'
       });
     });
@@ -1978,6 +2059,50 @@ function renderSpeciesEntriesExistente() {
         <div style="font-size:0.75rem;color:var(--text-muted);padding:6px 10px;background:var(--green-faint);border-radius:var(--radius-sm);line-height:1.5;" id="eetapa-desc-${i}">Selecciona una etapa para ver su descripción.</div>
       </div>
       <div class="form-group">
+        <label>Temporada de cosecha</label>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;" id="etemporada-${i}">
+          ${['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map(m => `
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;font-weight:400;color:var(--text);cursor:pointer;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--color-background-primary);">
+              <input type="checkbox" value="${m}" onchange="actualizarETemporada(${i})" style="width:auto;padding:0;margin:0;border:none;"/> ${m}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Altitud de cultivo</label>
+        <select id="ealtitud-${i}" onchange="tempSpeciesExistente[${i}].altitud=this.value">
+          <option value="">— Selecciona el rango —</option>
+          <option value="0 - 500 msnm">0 - 500 msnm (tierras bajas, trópico costero)</option>
+          <option value="500 - 1000 msnm">500 - 1.000 msnm (trópico cálido)</option>
+          <option value="1000 - 1500 msnm">1.000 - 1.500 msnm (trópico templado bajo)</option>
+          <option value="1500 - 2000 msnm">1.500 - 2.000 msnm (trópico templado)</option>
+          <option value="2000 - 2500 msnm">2.000 - 2.500 msnm (trópico frío)</option>
+          <option value="2500 - 3000 msnm">2.500 - 3.000 msnm (subpáramo)</option>
+          <option value="Más de 3000 msnm">Más de 3.000 msnm (páramo)</option>
+          <option value="Múltiples rangos">Múltiples rangos (adaptable a varias altitudes)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Usos</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;" id="eusos-${i}">
+          ${['Alimentario','Medicinal','Ornamental','Maderable','Apícola','Colorante','Cosmético','Artesanal','Forraje','Restauración ecológica'].map(u => `
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;font-weight:400;color:var(--text);cursor:pointer;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--color-background-primary);">
+              <input type="checkbox" value="${u}" onchange="actualizarEUsos(${i})" style="width:auto;padding:0;margin:0;border:none;"/> ${u}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Parte comestible</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;" id="eparte-${i}">
+          ${['Pulpa','Semilla','Cáscara','Flor','Hoja','Raíz','Tallo','Jugo','Aceite','Toda la fruta'].map(p => `
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.78rem;font-weight:400;color:var(--text);cursor:pointer;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--color-background-primary);">
+              <input type="checkbox" value="${p}" onchange="actualizarEParteComestible(${i})" style="width:auto;padding:0;margin:0;border:none;"/> ${p}
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      <div class="form-group">
         <label>Foto</label>
         ${tempPhotosExistente[i]
           ? `<img src="${tempPhotosExistente[i]}" class="photo-preview"/><button class="btn btn-ghost btn-sm" style="margin-top:4px;" onclick="clearEPhoto(${i})">✕ Quitar foto</button>`
@@ -2053,6 +2178,14 @@ async function guardarEspeciesExistente() {
       metodo_propagacion: f.propagacion || null,
       origen: f.origen || null,
       estado_conservacion: f.conservacion || null,
+      temporada_cosecha: f.temporada || null,
+      altitud_cultivo: f.altitud || null,
+      usos: f.usos || null,
+      parte_comestible: f.parte || null,
+      temporada_cosecha: f.temporada || null,
+      altitud_cultivo: f.altitud || null,
+      usos: f.usos || null,
+      parte_comestible: f.parte || null,
       user_id: user.id
     }));
     const { error } = await db.from('especies').insert(especiesData);
