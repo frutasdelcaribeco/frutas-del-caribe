@@ -339,6 +339,71 @@
       </div>
       <button class="btn btn-export" onclick="exportarExcel()">Exportar Excel</button>
     </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:1rem;">
+      <select id="filtro-etapa" onchange="renderCatalogo()" style="font-size:0.8rem;padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--green-faint);font-family:'Lato',sans-serif;">
+        <option value="">Etapa fenológica</option>
+        <option value="Plántula">Plántula</option>
+        <option value="Vegetativa">Vegetativa</option>
+        <option value="En flor">En flor</option>
+        <option value="Floración estéril">Floración estéril</option>
+        <option value="Vaneando">Vaneando</option>
+        <option value="Fructificando">Fructificando</option>
+        <option value="Enferma">Enferma</option>
+        <option value="Muerta">Muerta</option>
+      </select>
+      <select id="filtro-origen" onchange="renderCatalogo()" style="font-size:0.8rem;padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--green-faint);font-family:'Lato',sans-serif;">
+        <option value="">Origen</option>
+        <option value="Nativa">Nativa</option>
+        <option value="Silvestre">Silvestre</option>
+        <option value="Endémica">Endémica</option>
+        <option value="Naturalizada">Naturalizada</option>
+        <option value="Introducida">Introducida</option>
+        <option value="Cultivada">Cultivada</option>
+        <option value="Semicultivada">Semicultivada</option>
+        <option value="En proceso de domesticación">En proceso de domesticación</option>
+        <option value="Cosmopolita">Cosmopolita</option>
+      </select>
+      <select id="filtro-conservacion" onchange="renderCatalogo()" style="font-size:0.8rem;padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--green-faint);font-family:'Lato',sans-serif;">
+        <option value="">Estado de conservación</option>
+        <option value="NE">NE — No evaluada</option>
+        <option value="DD">DD — Datos insuficientes</option>
+        <option value="LC">LC — Preocupación menor</option>
+        <option value="NT">NT — Casi amenazada</option>
+        <option value="VU">VU — Vulnerable</option>
+        <option value="EN">EN — En peligro</option>
+        <option value="CR">CR — En peligro crítico</option>
+        <option value="EW">EW — Extinta en estado silvestre</option>
+        <option value="EX">EX — Extinta</option>
+      </select>
+      <select id="filtro-genero" onchange="renderCatalogo()" style="font-size:0.8rem;padding:7px 10px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--green-faint);font-family:'Lato',sans-serif;">
+        <option value="">Género botánico</option>
+        <option value="Mangifera">Mangifera</option>
+        <option value="Passiflora">Passiflora</option>
+        <option value="Musa">Musa</option>
+        <option value="Inga">Inga</option>
+        <option value="Eugenia">Eugenia</option>
+        <option value="Psidium">Psidium</option>
+        <option value="Annona">Annona</option>
+        <option value="Citrus">Citrus</option>
+        <option value="Theobroma">Theobroma</option>
+        <option value="Persea">Persea</option>
+        <option value="Garcinia">Garcinia</option>
+        <option value="Carica">Carica</option>
+        <option value="Solanum">Solanum</option>
+        <option value="Pouteria">Pouteria</option>
+        <option value="Syzygium">Syzygium</option>
+        <option value="Bactris">Bactris</option>
+        <option value="Nephelium">Nephelium</option>
+        <option value="Artocarpus">Artocarpus</option>
+        <option value="Hylocereus">Hylocereus</option>
+        <option value="Selenicereus">Selenicereus</option>
+        <option value="Vaccinium">Vaccinium</option>
+        <option value="Rubus">Rubus</option>
+        <option value="Cocos">Cocos</option>
+        <option value="Euterpe">Euterpe</option>
+      </select>
+      <button class="btn btn-outline" onclick="limpiarFiltros()" style="font-size:0.8rem;padding:7px 10px;">✕ Limpiar filtros</button>
+    </div>
     <div id="catalogo-list"><div class="loading"><div class="spinner"></div><br>Cargando...</div></div>
   </div>
 
@@ -1757,13 +1822,28 @@ async function cargarYRenderCatalogo() {
 
 async function renderCatalogo() {
   const q = (document.getElementById('search').value || '').toLowerCase();
+  const filtroEtapa = document.getElementById('filtro-etapa')?.value || '';
+  const filtroOrigen = document.getElementById('filtro-origen')?.value || '';
+  const filtroConservacion = document.getElementById('filtro-conservacion')?.value || '';
+  const filtroGenero = document.getElementById('filtro-genero')?.value || '';
   const list = document.getElementById('catalogo-list');
-  const filtered = allMiembros.filter(m =>
+
+  let filtered = allMiembros.filter(m =>
     m.nombre.toLowerCase().includes(q) ||
     (m.proyecto || '').toLowerCase().includes(q) ||
     (m.region || '').toLowerCase().includes(q) ||
     (m.especies || []).some(e => e.nombre_comun.toLowerCase().includes(q) || (e.nombre_cientifico || '').toLowerCase().includes(q))
   );
+
+  if (filtroEtapa || filtroOrigen || filtroConservacion || filtroGenero) {
+    filtered = filtered.filter(m => (m.especies || []).some(e => {
+      const matchEtapa = !filtroEtapa || e.etapa_fenologica === filtroEtapa;
+      const matchOrigen = !filtroOrigen || e.origen === filtroOrigen;
+      const matchConservacion = !filtroConservacion || (e.estado_conservacion || '').startsWith(filtroConservacion);
+      const matchGenero = !filtroGenero || (e.nombre_cientifico || '').trim().startsWith(filtroGenero);
+      return matchEtapa && matchOrigen && matchConservacion && matchGenero;
+    }));
+  }
   if (!filtered.length) { list.innerHTML = '<div class="empty">No se encontraron miembros.</div>'; return; }
   const { data: { user } } = await db.auth.getUser();
   const uid = user ? user.id : null;
@@ -2308,6 +2388,15 @@ function getGenusIcon(nombreCientifico) {
 
 function iconGenerico() {
   return `<svg width="28" height="28" viewBox="0 0 32 32" fill="none"><ellipse cx="16" cy="19" rx="8" ry="7" fill="#90b060"/><path d="M16 6 L16 12" stroke="#4a7030" stroke-width="1.5" stroke-linecap="round"/><path d="M16 6 C13 10 12 15 16 19" stroke="#4a7030" stroke-width="1.2" fill="none" stroke-linecap="round"/><path d="M16 6 C19 10 20 15 16 19" stroke="#4a7030" stroke-width="1.2" fill="none" stroke-linecap="round"/></svg>`;
+}
+
+function limpiarFiltros() {
+  document.getElementById('search').value = '';
+  document.getElementById('filtro-etapa').value = '';
+  document.getElementById('filtro-origen').value = '';
+  document.getElementById('filtro-conservacion').value = '';
+  document.getElementById('filtro-genero').value = '';
+  renderCatalogo();
 }
 
 // ── UTILS ─────────────────────────────────────────
