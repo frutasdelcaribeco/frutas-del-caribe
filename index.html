@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Frutas del Caribe</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Lato:wght@400;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 @font-face {
   font-family: 'Tropical';
@@ -250,6 +252,7 @@
   <button onclick="showTab('catalogo', this)">Catálogo</button>
   <button onclick="showTab('estadisticas', this)">Estadísticas</button>
   <button id="btn-admin-tab" onclick="showTab('admin', this)" style="display:none;">Admin</button>
+  <button onclick="showTab('mapa', this)">Mapa</button>
 </nav>
 
 <main>
@@ -445,6 +448,15 @@
     </div>
   </div>
 
+  <!-- MAPA -->
+  <div id="tab-mapa" class="section">
+    <div class="card" style="padding:0.75rem 1rem;margin-bottom:1rem;">
+      <p style="font-size:0.85rem;color:var(--text-muted);">Ubicación de los miembros con coordenadas registradas. Haz clic en un marcador para ver sus especies.</p>
+    </div>
+    <div id="mapa-container" style="height:480px;border-radius:var(--radius);overflow:hidden;border:1.5px solid var(--border);"></div>
+    <div id="mapa-sin-datos" class="empty" style="display:none;">Ningún miembro tiene enlace de Google Maps registrado aún.</div>
+  </div>
+
 </main>
 
 <div id="lightbox" class="lightbox" style="display:none;" onclick="cerrarLightbox(event)">
@@ -611,6 +623,85 @@ function showTab(tab, el) {
   if (tab === 'catalogo') cargarYRenderCatalogo();
   if (tab === 'estadisticas') cargarYRenderStats();
   if (tab === 'admin') cargarListaCodigos();
+  if (tab === 'mapa') iniciarMapa();
+}
+
+// ── MAPA INTERACTIVO ──────────────────────────────
+let mapaLeaflet = null;
+
+async function iniciarMapa() {
+  const { data } = await db.from('miembros').select('*, especies(nombre_comun)');
+  const miembros = (data || []).filter(m => m.maps && m.maps.trim());
+
+  document.getElementById('mapa-sin-datos').style.display = miembros.length ? 'none' : 'block';
+  document.getElementById('mapa-container').style.display = miembros.length ? 'block' : 'none';
+
+  if (!miembros.length) return;
+
+  if (!mapaLeaflet) {
+    mapaLeaflet = L.map('mapa-container').setView([4.5709, -74.2973], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(mapaLeaflet);
+  } else {
+    mapaLeaflet.eachLayer(layer => { if (layer instanceof L.Marker) mapaLeaflet.removeLayer(layer); });
+  }
+
+  const geocodedCount = { n: 0 };
+
+  for (const m of miembros) {
+    const coords = await extraerCoordenadas(m.maps);
+    if (!coords) continue;
+    geocodedCount.n++;
+
+    const especies = (m.especies || []).map(e => e.nombre_comun).slice(0, 5).join(', ');
+    const popup = `
+      <div style="font-family:'Lato',sans-serif;min-width:180px;">
+        <strong style="font-family:'Playfair Display',serif;font-size:14px;color:#1e4d2b;">${m.nombre}</strong>
+        ${m.proyecto ? `<div style="font-size:11px;color:#8a7050;margin-top:2px;">${m.proyecto}</div>` : ''}
+        ${m.region ? `<div style="font-size:11px;color:#5a8a6a;">📍 ${m.region}</div>` : ''}
+        ${especies ? `<div style="font-size:11px;margin-top:6px;color:#333;"><strong>Especies:</strong> ${especies}${(m.especies||[]).length > 5 ? ` y ${(m.especies||[]).length - 5} más` : ''}</div>` : ''}
+      </div>`;
+
+    const icon = L.divIcon({
+      html: `<div style="background:#1e4d2b;color:#f8fae8;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:13px;font-weight:700;border:2px solid #a8d444;box-shadow:0 2px 6px rgba(0,0,0,0.3);">${m.nombre.charAt(0).toUpperCase()}</div>`,
+      className: '',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16]
+    });
+
+    L.marker([coords.lat, coords.lng], { icon }).addTo(mapaLeaflet).bindPopup(popup);
+  }
+
+  if (geocodedCount.n > 0) mapaLeaflet.invalidateSize();
+}
+
+async function extraerCoordenadas(mapsUrl) {
+  try {
+    const patterns = [
+      /@(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+      /!3d(-?\d+\.?\d*)!4d(-?\d+\.?\d*)/,
+      /ll=(-?\d+\.?\d*),(-?\d+\.?\d*)/,
+      /q=(-?\d+\.?\d*),(-?\d+\.?\d*)/
+    ];
+    for (const pattern of patterns) {
+      const match = mapsUrl.match(pattern);
+      if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+    }
+
+    // Para URLs cortas tipo maps.app.goo.gl intentar fetch
+    if (mapsUrl.includes('goo.gl') || mapsUrl.includes('maps.app')) {
+      try {
+        const resp = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(mapsUrl)}`);
+        const text = await resp.text();
+        for (const pattern of patterns) {
+          const match = text.match(pattern);
+          if (match) return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+        }
+      } catch(e) {}
+    }
+    return null;
+  } catch(e) { return null; }
 }
 
 // ── SPECIES ENTRIES ───────────────────────────────
@@ -2483,18 +2574,39 @@ async function subirFotoGaleria(event, especieId, tipo) {
   const file = event.target.files[0];
   if (!file) return;
   const { data: { user } } = await db.auth.getUser();
-  const reader = new FileReader();
-  reader.onload = async ev => {
-    const { error } = await db.from('fotos_especies').insert({
+  if (!user) return;
+
+  const ext = file.name.split('.').pop();
+  const path = `${user.id}/${especieId}/${tipo}.${ext}`;
+
+  const { data: uploadData, error: uploadError } = await db.storage
+    .from('fotos-especies')
+    .upload(path, file, { upsert: true });
+
+  if (uploadError) { alert('Error al subir foto: ' + uploadError.message); return; }
+
+  const { data: urlData } = db.storage.from('fotos-especies').getPublicUrl(path);
+  const publicUrl = urlData.publicUrl;
+
+  // Verificar si ya existe una foto de ese tipo para esa especie
+  const { data: existing } = await db.from('fotos_especies')
+    .select('id')
+    .eq('especie_id', especieId)
+    .eq('tipo_foto', tipo)
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    await db.from('fotos_especies').update({ foto_url: publicUrl }).eq('id', existing[0].id);
+  } else {
+    await db.from('fotos_especies').insert({
       especie_id: especieId,
-      foto_url: ev.target.result,
+      foto_url: publicUrl,
       tipo_foto: tipo,
       user_id: user.id
     });
-    if (error) { alert('Error al subir foto: ' + error.message); return; }
-    cargarGaleria(especieId);
-  };
-  reader.readAsDataURL(file);
+  }
+
+  cargarGaleria(especieId);
 }
 
 function abrirLightbox(url, fotoId, puedeEliminar) {
@@ -2513,6 +2625,12 @@ function cerrarLightbox(event) {
 async function eliminarFotoGaleria() {
   if (!lightboxFotoId) return;
   if (!confirm('¿Eliminar esta foto?')) return;
+  const { data: foto } = await db.from('fotos_especies').select('foto_url, especie_id').eq('id', lightboxFotoId).single();
+  if (foto) {
+    const url = new URL(foto.foto_url);
+    const path = url.pathname.split('/object/public/fotos-especies/')[1];
+    if (path) await db.storage.from('fotos-especies').remove([decodeURIComponent(path)]);
+  }
   await db.from('fotos_especies').delete().eq('id', lightboxFotoId);
   document.getElementById('lightbox').style.display = 'none';
   cargarYRenderCatalogo();
